@@ -3,7 +3,7 @@ import type { FadeMessage } from './lesson';
 
 type Clip = { text: string; audioUrl?: string | null };
 
-// CoTeach's lines play one after another, never on top of each other and never
+// CoTeach AI's lines play one after another, never on top of each other and never
 // cutting each other off: "here are your steps" is followed by the server's
 // "Hi Maya! First, …" instead of being interrupted by it. Each line uses the
 // server's ElevenLabs clip when there is one, else the browser's own voice.

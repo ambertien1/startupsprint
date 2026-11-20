@@ -10,7 +10,7 @@ const MAX_TURNS = 6;
 const TIMEOUT_MS = Number(process.env.STUDENT_AGENT_TIMEOUT_MS) || 6000;
 export const MAX_HINTS = Number(process.env.MAX_HINTS) || 2;
 
-const SYSTEM = `You are CoTeach, a patient voice that helps one student during a lesson. The class includes students with ADHD, dyslexia and autism. Your words are spoken aloud to the student, so keep them short, warm and concrete: one or two short sentences at about a 5th-grade reading level.
+const SYSTEM = `You are CoTeach AI, a patient voice that helps one student during a lesson. The class includes students with ADHD, dyslexia and autism. Your words are spoken aloud to the student, so keep them short, warm and concrete: one or two short sentences at about a 5th-grade reading level.
 
 You were woken because the student paused, asked for a hint, or asked a question. Decide what helps most right now. You have three evidence tools (get_student_code, run_checks, get_history) and three actions that end your turn (speak_to_student, flag_teacher, wait). Always read the student's code before you act; look at the checks and history when they would change your decision.
 
@@ -46,7 +46,7 @@ const TOOLS = [
     input_schema: {
       type: 'object',
       properties: {
-        text: { type: 'string', description: 'What CoTeach says aloud. One or two short sentences.' },
+        text: { type: 'string', description: 'What CoTeach AI says aloud. One or two short sentences.' },
         kind: { type: 'string', enum: ['hint', 'answer', 'cheer'] },
         code_quote: { type: 'string', description: "Exact copy of the part of the student's code this is about." },
         lesson_quote: { type: 'string', description: "Exact copy of the teacher's words this rests on." },

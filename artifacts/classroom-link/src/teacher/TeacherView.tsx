@@ -77,7 +77,7 @@ function StudentDetail({ student, online, pending, onHelp, total }: {
 
       {student.said && (
         <div data-testid="student-said" className="td-said">
-          <h4>What CoTeach told {student.name}</h4>
+          <h4>What CoTeach AI told {student.name}</h4>
           <p className="td-said-text">{student.said.text}</p>
           <div className="td-quotes">
             <div><h5>From their code</h5><blockquote className="mono">{student.said.code_quote || 'No code quote shared.'}</blockquote></div>
@@ -87,7 +87,7 @@ function StudentDetail({ student, online, pending, onHelp, total }: {
       )}
 
       <details data-testid="student-reasoning" className="td-reasoning">
-        <summary>How CoTeach decided</summary>
+        <summary>How CoTeach AI decided</summary>
         <div className="td-reasoning-body">
           {student.reasoning && (
             <dl className="td-meta">
@@ -274,7 +274,7 @@ export default function TeacherView(p: TeacherViewProps) {
                   <span className="td-chip-dot" aria-hidden="true" />{recording ? 'Live' : paused ? 'Paused' : 'Ready'}
                 </span>
                 <h1 className="td-h1">{recording ? 'Teaching in progress' : paused ? 'Paused' : 'Ready to teach'}</h1>
-                <p className="td-sub">CoTeach is listening, creating steps, and supporting your students in real time.</p>
+                <p className="td-sub">CoTeach AI is listening, creating steps, and supporting your students in real time.</p>
                 {(recording || paused) && (
                   <p className="td-timer"><span className={`td-rec ${recording ? 'on' : ''}`} aria-hidden="true" />
                     <span role="timer" aria-label="Recording time">{timer}</span>
