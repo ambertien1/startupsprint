@@ -183,6 +183,9 @@ button.td-scard:hover { transform: translateY(-2px); border-color: var(--td-sage
   .td-history, .td-quotes { grid-template-columns: 1fr; }
   .td-grid { grid-template-columns: 1fr 1fr; }
   .td-controls .td-btn { flex: 1; }
+  .td-controls .td-btn:first-child { flex: 1.5; }
+  .td-card-head > .td-grow { flex: 1 1 calc(100% - 58px); }
+  .td-card-head > .td-chip, .td-card-head > .td-btn { margin-left: 58px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .teacher-dashboard *, .td-dialog, .td-dialog *, .td-overlay { animation: none !important; transition: none !important; }
