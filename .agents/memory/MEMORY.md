@@ -1,0 +1,1 @@
+- [Fade product and ownership](fade-product.md) — accessible, step-by-step student guidance; preserve file ownership during concurrent editing.
