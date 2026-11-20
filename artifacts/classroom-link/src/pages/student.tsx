@@ -183,7 +183,7 @@ export default function Student() {
           </button>
 
           <div className="sv-row">
-            <button type="button" className="sv-link" onClick={() => f.askQuestion('Can I have a hint?')} data-testid="button-hint">Give me a hint</button>
+            <button type="button" className="sv-link" onClick={f.requestHint} data-testid="button-hint">Give me a hint</button>
             <button type="button" className="sv-link" onClick={() => setTyping((v) => !v)} aria-expanded={typing}>{typing ? 'Hide typing' : 'Type instead'}</button>
           </div>
           {typing && (
