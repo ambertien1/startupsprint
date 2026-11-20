@@ -44,8 +44,7 @@ export function useStudentFade() {
       setMessage({
         kind: 'cheer',
         text: allDone ? 'You did it! You finished every step.'
-          : newlyDone.some((step) => step.id === 's1') ? 'Nice! Your title is there.'
-          : 'Nice! Your paragraph is there.',
+          : `Nice! Step ${checked.indexOf(newlyDone[newlyDone.length - 1]) + 1} is done.`,
       });
     }
   }, []);
@@ -54,7 +53,9 @@ export function useStudentFade() {
     const socket = getStudentSocket();
     const onConnect = () => {
       setStatus('online');
-      socket.emit('code:update', codeRef.current);
+      // Tell the server who this is, so Fade can use the name and the teacher sees them.
+      socket.emit('student:join', { studentId, name });
+      socket.emit('code:update', { ...codeRef.current, preset: true });
     };
     const onDisconnect = () => setStatus('offline');
     const onSteps = (payload: { steps?: unknown }) => {
@@ -93,7 +94,7 @@ export function useStudentFade() {
       socket.off('fade:say', onSay);
       socket.disconnect();
     };
-  }, [applyProgress]);
+  }, [applyProgress, studentId, name]);
 
   useEffect(() => { applyProgress(stepsRef.current); }, [html, applyProgress]);
 
