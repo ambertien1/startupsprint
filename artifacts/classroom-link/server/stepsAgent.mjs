@@ -2,7 +2,7 @@
 // Owned by the teacher + server half. See CLAUDE.md "Steps agent rules".
 import Anthropic from '@anthropic-ai/sdk';
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
-import { z } from 'zod';
+import { z } from 'zod/v4'; // the SDK's helper needs the v4 entry point
 
 const MODEL = process.env.STEPS_MODEL || 'claude-opus-5-5';
 const TIMEOUT_MS = Number(process.env.STEPS_TIMEOUT_MS) || 8000;
@@ -44,6 +44,10 @@ If you cannot tell what the student should do, do not guess: return an empty ste
 const LISTENING = `
 
 Right now the teacher is teaching, and you are listening along. Most of what she says is explanation, stories, questions to the class, or classroom management. None of that is a step. Set has_task to true only when what she just said tells students to do something on their own screens ("add...", "now type...", "go ahead and make...", "I want you to..."). Then return the full updated step list as described above. When she is only explaining, set has_task to false, return the current steps unchanged with their ids, and leave question empty. Never ask a question while listening: if you are not sure it was a task, it was not.`;
+
+// Built once at startup so a schema problem fails loudly instead of on first use.
+const OUTPUT_FORMAT = zodOutputFormat(StepsSchema);
+export const _outputFormat = OUTPUT_FORMAT;
 
 let client = null;
 function getClient() {
@@ -128,7 +132,7 @@ export async function makeSteps({ taskText, lesson = '', currentSteps = [], mode
     const response = await getClient().messages.parse({
       model: MODEL,
       max_tokens: 2000,
-      output_config: { effort: 'low', format: zodOutputFormat(StepsSchema) },
+      output_config: { effort: 'low', format: OUTPUT_FORMAT },
       system: listening ? SYSTEM + LISTENING : SYSTEM,
       messages: [{ role: 'user', content: buildUserMessage({ taskText, lesson, currentSteps }) }],
     });

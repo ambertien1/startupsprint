@@ -193,3 +193,9 @@ test('teaching is one stream: explanation makes no steps, a task said while teac
     if (saved.token) process.env.ANTHROPIC_AUTH_TOKEN = saved.token;
   }
 });
+
+test('steps agent: the output schema builds and the model call is shaped correctly', async () => {
+  const { _outputFormat, makeSteps } = await import('./stepsAgent.mjs');
+  assert.equal(_outputFormat.type, 'json_schema');
+  assert.deepEqual(Object.keys(_outputFormat.schema.properties).sort(), ['has_task', 'question', 'steps']);
+});
