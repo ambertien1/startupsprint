@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
-import { ArrowUp, Check, AlertCircle, Info, Mic, LoaderCircle } from 'lucide-react';
+import { ArrowUp, Check, AlertCircle, Info, Mic, LoaderCircle, CircleCheck, Pencil, XCircle } from 'lucide-react';
 import { io, type Socket } from 'socket.io-client';
 import { Shell } from '@/components/shell';
 import { MAX_LEN, type Status } from '@/lib/socket';
@@ -12,6 +12,136 @@ type TaskAck = {
   question?: string;
   ms?: number;
 };
+
+type StudentUpdate = {
+  studentId: string;
+  name: string;
+  stepIndex: number;
+  status: 'working' | 'done' | 'needs_help';
+  sentence: string;
+  reason?: string;
+  code?: string;
+  said?: { text: string; kind: string; code_quote: string; lesson_quote: string };
+  hintsLeft?: number;
+  reasoning?: {
+    trigger: string;
+    action: string;
+    ms: number;
+    log: { t: number; tool: string; input: unknown; result: unknown; ok: boolean }[];
+  };
+};
+
+function decisionSummary(value: unknown, depth = 0): string {
+  const shorten = (text: string) => text.length > 320 ? `${text.slice(0, 317)}…` : text;
+  if (value === null || value === undefined) return 'None';
+  if (typeof value === 'string') return shorten(value.replace(/\s+/g, ' ').trim()) || 'Empty';
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+  if (typeof value !== 'object') return String(value);
+  if (depth > 2) return Array.isArray(value) ? `${value.length} items` : 'Additional details';
+  if (Array.isArray(value)) {
+    if (!value.length) return 'No items';
+    return shorten(value.slice(0, 3).map(item => decisionSummary(item, depth + 1)).join('; ')
+      + (value.length > 3 ? `; +${value.length - 3} more` : ''));
+  }
+  const entries = Object.entries(value);
+  if (!entries.length) return 'No additional input';
+  return shorten(entries.slice(0, 4).map(([key, item]) =>
+    `${key.replace(/_/g, ' ')}: ${decisionSummary(item, depth + 1)}`).join('; ')
+    + (entries.length > 4 ? `; +${entries.length - 4} more fields` : ''));
+}
+
+function StudentRow({ student, online, pending, onHelp }: {
+  student: StudentUpdate;
+  online: boolean;
+  pending: boolean;
+  onHelp: (studentId: string) => void;
+}) {
+  const needsHelp = student.status === 'needs_help';
+  const { label, Icon } = needsHelp ? { label: 'Needs you', Icon: AlertCircle }
+    : student.status === 'done' ? { label: 'Done', Icon: CircleCheck }
+      : { label: 'Working', Icon: Pencil };
+  return (
+    <li data-student-id={student.studentId} data-status={student.status}
+      className={`min-w-0 rounded-2xl bg-card p-5 ${needsHelp ? 'border-2 border-accent shadow-sm' : 'border'}`}>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <p aria-live="polite" className={`min-w-0 flex-1 break-words ${needsHelp ? 'font-serif text-3xl leading-tight' : 'text-lg'}`}>
+          {student.sentence}
+        </p>
+        <span data-testid="student-status" className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-semibold ${needsHelp ? 'border-accent text-accent' : 'text-primary'}`}>
+          <Icon aria-hidden="true" className="h-4 w-4" />{label}
+        </span>
+      </div>
+
+      {needsHelp && (
+        <div className="mt-3 space-y-3">
+          {student.reason && <p data-testid="student-reason" className="whitespace-pre-wrap break-words text-lg">{student.reason}</p>}
+          <pre aria-label={`${student.name}'s HTML`} className="max-h-72 overflow-auto whitespace-pre-wrap break-words rounded-xl bg-slate-950 p-4 font-mono text-sm leading-relaxed text-slate-100">
+            <code>{student.code === undefined ? 'No code has been shared yet.' : student.code || 'The editor is empty.'}</code>
+          </pre>
+          <button type="button" data-testid="button-helped" disabled={!online || pending}
+            onClick={() => onHelp(student.studentId)}
+            className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-5 py-2.5 font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50">
+            <Check aria-hidden="true" className="h-4 w-4" />I'm with them
+          </button>
+          {pending && <p role="status" className="text-sm text-muted-foreground">Waiting for the student update…</p>}
+        </div>
+      )}
+
+      {student.said && (
+        <div data-testid="student-said" className="mt-4 space-y-3 border-t pt-4">
+          <div>
+            <h3 className="text-sm font-semibold">What Fade told {student.name}</h3>
+            <p className="mt-1 whitespace-pre-wrap break-words text-lg">{student.said.text}</p>
+          </div>
+          <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+            <div className="min-w-0 rounded-xl bg-muted/60 p-3">
+              <h4 className="text-sm font-semibold">From their code</h4>
+              <blockquote className="mt-1 whitespace-pre-wrap break-words font-mono text-sm">{student.said.code_quote || 'No code quote shared.'}</blockquote>
+            </div>
+            <div className="min-w-0 rounded-xl bg-muted/60 p-3">
+              <h4 className="text-sm font-semibold">From your lesson</h4>
+              <blockquote className="mt-1 whitespace-pre-wrap break-words text-sm">{student.said.lesson_quote || 'No lesson quote shared.'}</blockquote>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <details data-testid="student-reasoning" className="mt-4 rounded-xl border">
+        <summary className="cursor-pointer rounded-xl px-4 py-3 font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">How Fade decided</summary>
+        <div className="space-y-3 border-t p-4">
+          {student.reasoning && (
+            <dl className="flex flex-wrap gap-x-5 gap-y-2 text-sm">
+              <div><dt className="font-semibold">Trigger</dt><dd>{student.reasoning.trigger.replace(/_/g, ' ')}</dd></div>
+              <div><dt className="font-semibold">Action</dt><dd>{student.reasoning.action.replace(/_/g, ' ')}</dd></div>
+              <div><dt className="font-semibold">Time</dt><dd>{student.reasoning.ms} ms</dd></div>
+            </dl>
+          )}
+          {typeof student.hintsLeft === 'number' && <p className="text-sm">Hints left: {student.hintsLeft}</p>}
+          {student.reasoning?.log.length ? (
+            <ol className="list-decimal space-y-3 pl-5">
+              {student.reasoning.log.map((entry, index) => (
+                <li key={index} data-testid="reasoning-entry" className="rounded-lg border p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="break-all font-mono text-sm font-semibold">{entry.tool}</span>
+                    <span className="inline-flex items-center gap-1.5 text-sm font-semibold">
+                      {entry.ok === false ? <XCircle aria-hidden="true" className="h-4 w-4" /> : <CircleCheck aria-hidden="true" className="h-4 w-4" />}
+                      {entry.ok === false ? 'Rejected' : 'Accepted'}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">{entry.t} ms</p>
+                  <dl className="mt-2 space-y-2 break-words text-sm leading-relaxed">
+                    <div><dt className="font-semibold">Input</dt><dd>{decisionSummary(entry.input)}</dd></div>
+                    <div><dt className="font-semibold">Result</dt><dd>{decisionSummary(entry.result)}</dd></div>
+                  </dl>
+                </li>
+              ))}
+            </ol>
+          ) : <p className="text-sm text-muted-foreground">No decisions have been shared yet.</p>}
+        </div>
+      </details>
+    </li>
+  );
+}
 
 type VoiceTarget = 'teach' | 'task';
 type VoicePhase = 'requesting' | 'recording' | 'transcribing';
@@ -242,6 +372,9 @@ export default function Teacher() {
   const [makingSteps, setMakingSteps] = useState(false);
   const [lessonError, setLessonError] = useState('');
   const [taskError, setTaskError] = useState('');
+  const [students, setStudents] = useState<Map<string, StudentUpdate>>(() => new Map());
+  const [helpPending, setHelpPending] = useState<Set<string>>(() => new Set());
+  const helpPendingRef = useRef(new Set<string>());
   const socketRef = useRef<Socket | null>(null);
   const lessonRef = useRef<HTMLTextAreaElement>(null);
   // Refs prevent duplicate submissions before React has rendered the busy state.
@@ -255,7 +388,11 @@ export default function Teacher() {
     const socket = io({ path: `${import.meta.env.BASE_URL}socket.io` });
     socketRef.current = socket;
     const onConnect = () => setStatus('online');
-    const onDisconnect = () => setStatus('offline');
+    const onDisconnect = () => {
+      setStatus('offline');
+      helpPendingRef.current.clear();
+      setHelpPending(new Set());
+    };
     const onSteps = (payload: { steps: Step[] }) => {
       if (!Array.isArray(payload?.steps)) return;
       setSteps(payload.steps);
@@ -264,11 +401,21 @@ export default function Teacher() {
     const onQuestion = (payload: { question: string }) => {
       if (typeof payload?.question === 'string') setQuestion(payload.question);
     };
+    const onStudentUpdate = (payload: StudentUpdate) => {
+      if (!payload || typeof payload.studentId !== 'string') return;
+      setStudents(previous => new Map(previous).set(payload.studentId, {
+        ...previous.get(payload.studentId),
+        ...payload,
+      }));
+      helpPendingRef.current.delete(payload.studentId);
+      setHelpPending(new Set(helpPendingRef.current));
+    };
     socket.on('connect', onConnect);
     socket.on('disconnect', onDisconnect);
     socket.on('connect_error', onDisconnect);
     socket.on('steps:new', onSteps);
     socket.on('steps:question', onQuestion);
+    socket.on('student:update', onStudentUpdate);
     if (socket.connected) onConnect();
     return () => {
       socketRef.current = null;
@@ -277,11 +424,24 @@ export default function Teacher() {
       socket.off('connect_error', onDisconnect);
       socket.off('steps:new', onSteps);
       socket.off('steps:question', onQuestion);
+      socket.off('student:update', onStudentUpdate);
       socket.disconnect();
     };
   }, []);
 
   const online = status === 'online';
+  const sortedStudents = [...students.values()].sort((a, b) =>
+    Number(b.status === 'needs_help') - Number(a.status === 'needs_help')
+    || a.name.localeCompare(b.name) || a.studentId.localeCompare(b.studentId));
+
+  function helpStudent(studentId: string) {
+    const socket = socketRef.current;
+    if (!socket?.connected || helpPendingRef.current.has(studentId)) return;
+    helpPendingRef.current.add(studentId);
+    setHelpPending(new Set(helpPendingRef.current));
+    // The next student:update, not the click, decides when the card clears.
+    socket.emit('teacher:helped', { studentId });
+  }
 
   const voice = useTeacherVoice((target, text) => {
     if (target === 'teach') {
@@ -373,6 +533,18 @@ export default function Teacher() {
             {status === 'connecting' ? 'Connecting to the classroom...' : 'Connection lost. Sending is paused until it returns.'}
           </p>
         )}
+
+        <section aria-labelledby="class-heading">
+          <h2 id="class-heading" className="text-2xl font-semibold">Your class</h2>
+          {sortedStudents.length ? (
+            <ul data-testid="student-list" className="mt-4 space-y-4">
+              {sortedStudents.map(student => (
+                <StudentRow key={student.studentId} student={student} online={online}
+                  pending={helpPending.has(student.studentId)} onHelp={helpStudent} />
+              ))}
+            </ul>
+          ) : <p className="mt-3 text-muted-foreground">No students have joined yet</p>}
+        </section>
 
         <form onSubmit={teach} className="rounded-2xl border bg-card p-5">
           <label htmlFor="teach" className="text-xl font-semibold">Teach</label>
