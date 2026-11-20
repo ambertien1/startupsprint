@@ -65,6 +65,12 @@ function StudentWorkspace() {
   const [thread, setThread] = useState<Turn[]>([]);
   const [waiting, setWaiting] = useState(false);
   const threadEnd = useRef<HTMLDivElement>(null);
+  const chatBox = useRef<HTMLDivElement>(null);
+  // Steps and the conversation live on separate tabs so neither crowds the other.
+  const [view, setView] = useState<'steps' | 'chat'>('steps');
+  const [unread, setUnread] = useState(false);
+  const viewRef = useRef(view);
+  viewRef.current = view;
   const you = (text: string) => { setThread((t) => [...t, { from: 'you' as const, text }].slice(-8)); setWaiting(true); };
   const ask = (text: string) => { const sent = f.askQuestion(text); if (sent) you(text); return sent; };
   const hint = () => { f.requestHint(); you('Can I have a hint?'); };
@@ -97,7 +103,19 @@ function StudentWorkspace() {
     const timer = window.setTimeout(() => setWaiting(false), 15000);
     return () => window.clearTimeout(timer);
   }, [waiting, thread.length]);
-  useEffect(() => { threadEnd.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }, [thread.length, waiting, talk.transcripts.length]);
+  const chatCount = thread.length + talk.transcripts.length;
+  useEffect(() => {
+    // Keep the newest message in view without moving the rest of the page.
+    const box = chatBox.current;
+    if (box) box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
+  }, [chatCount, waiting, view]);
+  useEffect(() => {
+    if (!chatCount) return;
+    // A new message opens the conversation; it never interrupts silently.
+    setView('chat');
+    if (viewRef.current !== 'chat') setUnread(false);
+  }, [chatCount]);
+  useEffect(() => { if (talk.active) setView('chat'); }, [talk.active]);
 
   const srcDoc = useMemo(() => buildPreview(f.html, f.css), [f.html, f.css]);
   // A <title> tag names the browser tab, so show it on the preview's tab.
@@ -189,77 +207,97 @@ function StudentWorkspace() {
             </button>
           )}
 
-          {/* 1. What to do now */}
-          <div className="sv-say" aria-live="polite" aria-atomic="true">
-            <button type="button" className="sv-orb" key={m.text} onClick={f.replay} aria-label="Say it again" title="Say it again" data-testid="button-say-again">
-              <span className="sv-wave" aria-hidden="true"><i /><i /><i /><i /><i /></span>
+          {/* Two tabs: the steps, and talking with CoTeach AI */}
+          <div className="sv-tabs" role="tablist" aria-label="CoTeach AI">
+            <button type="button" role="tab" id="sv-tab-steps" aria-controls="sv-pane-steps" aria-selected={view === 'steps'} className="sv-tabbtn" onClick={() => setView('steps')} data-testid="tab-steps">
+              {I.check}<span>Steps</span>{f.steps.length > 0 && <span className="sv-tabnum">{doneCount}/{f.steps.length}</span>}
             </button>
-            <div className="sv-say-text">
-              <p className="sv-hi">{heading}</p>
-              <p className="sv-msg" data-testid="text-fade-message">{body}</p>
-              <button type="button" className="sv-again" onClick={f.replay} data-testid="button-restate">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.6-5.9M4 4v5h5" /></svg>
-                Say it again
-              </button>
-            </div>
+            <button type="button" role="tab" id="sv-tab-chat" aria-controls="sv-pane-chat" aria-selected={view === 'chat'} className="sv-tabbtn" onClick={() => { setView('chat'); setUnread(false); }} data-testid="tab-chat">
+              {I.mic}<span>Ask CoTeach AI</span>{chatCount > 0 && <span className="sv-tabnum">{chatCount}</span>}
+            </button>
           </div>
 
-          {/* 2. The steps, in order */}
-          <section className="sv-sec" aria-labelledby="sv-steps-h">
-            <div className="sv-sec-head">
-              <h2 id="sv-steps-h">Your steps</h2>
-              {f.steps.length > 0 && <span className="sv-sec-meta">{doneCount} of {f.steps.length} done</span>}
+          {/* Steps tab: what to do now, then the list */}
+          <div id="sv-pane-steps" role="tabpanel" aria-labelledby="sv-tab-steps" className="sv-pane" hidden={view !== 'steps'}>
+            <div className="sv-say" aria-live="polite" aria-atomic="true">
+              <button type="button" className="sv-orb" key={m.text} onClick={f.replay} aria-label="Say it again" title="Say it again" data-testid="button-say-again">
+                <span className="sv-wave" aria-hidden="true"><i /><i /><i /><i /><i /></span>
+              </button>
+              <div className="sv-say-text">
+                <p className="sv-hi">{heading}</p>
+                <p className="sv-msg" data-testid="text-fade-message">{body}</p>
+                <button type="button" className="sv-again" onClick={f.replay} data-testid="button-restate">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.6-5.9M4 4v5h5" /></svg>
+                  Say it again
+                </button>
+              </div>
             </div>
-            {f.steps.length > 0 && <div className="sv-prog" aria-hidden="true"><span style={{ transform: `scaleX(${pct / 100})` }} /></div>}
-            {f.steps.length ? (
-              <ol className="sv-steps">
-                {f.steps.map((s, i) => {
-                  const current = i === f.currentStepIndex && !s.done;
-                  return (
-                    <li key={s.id} className="sv-step" data-current={current} data-done={s.done} aria-current={current ? 'step' : undefined} data-testid={`step-${s.id}`}>
-                      <span className="sv-n" aria-hidden="true">{i + 1}</span>
-                      <span className="sv-stext">
-                        <span className="sv-tag">{s.done ? 'Done' : current ? 'Now' : 'Next'}</span>
-                        {s.text}
-                      </span>
-                      <span className="sv-tick" aria-hidden="true">{s.done ? I.check : null}</span>
-                    </li>
-                  );
-                })}
-              </ol>
-            ) : (
-              <p className="sv-empty">Your steps will show up here when your teacher gives a task.</p>
-            )}
-          </section>
 
-          {/* 3. Questions and hints, as a conversation */}
-          {(thread.length > 0 || waiting || talk.transcripts.length > 0) && (
-            <section className="sv-sec" aria-labelledby="sv-chat-h">
-              <div className="sv-sec-head"><h2 id="sv-chat-h">Questions</h2></div>
-              <ol className="sv-chat" aria-live="polite">
-                {thread.map((t, i) => (
-                  <li key={i} className="sv-turn" data-from={t.from}>
-                    <span className="sv-turn-who">{t.from === 'you' ? 'You' : t.kind === 'hint' ? 'CoTeach AI · hint' : 'CoTeach AI'}</span>
-                    <p className="sv-bubble">{t.text}</p>
-                    {t.from === 'fade' && (t.lesson || t.code) ? (
-                      <div className="sv-quotes">
-                        {t.lesson ? <p data-testid="text-lesson-quote"><span>Your teacher said</span>“{t.lesson}”</p> : null}
-                        {t.code ? <p data-testid="text-code-quote"><span>In your code</span><code>{t.code}</code></p> : null}
-                      </div>
-                    ) : null}
-                  </li>
-                ))}
-                {talk.transcripts.slice(-6).map((t) => (
-                  <li key={t.id} className="sv-turn" data-from={t.source === 'student' ? 'you' : 'fade'}>
-                    <span className="sv-turn-who">{t.source === 'student' ? 'You said' : 'CoTeach AI'}</span>
-                    <p className="sv-bubble">{t.text.replace(/\[[^\]]*\]\s*/g, '')}</p>
-                  </li>
-                ))}
-                {waiting && <li className="sv-turn" data-from="fade"><span className="sv-turn-who">CoTeach AI</span><p className="sv-bubble sv-dots" aria-label="CoTeach AI is thinking"><i /><i /><i /></p></li>}
-              </ol>
-              <div ref={threadEnd} />
+            <section className="sv-sec" aria-labelledby="sv-steps-h">
+              <div className="sv-sec-head">
+                <h2 id="sv-steps-h">Your steps</h2>
+                {f.steps.length > 0 && <span className="sv-sec-meta">{doneCount} of {f.steps.length} done</span>}
+              </div>
+              {f.steps.length > 0 && <div className="sv-prog" aria-hidden="true"><span style={{ transform: `scaleX(${pct / 100})` }} /></div>}
+              {f.steps.length ? (
+                <ol className="sv-steps">
+                  {f.steps.map((s, i) => {
+                    const current = i === f.currentStepIndex && !s.done;
+                    return (
+                      <li key={s.id} className="sv-step" data-current={current} data-done={s.done} aria-current={current ? 'step' : undefined} data-testid={`step-${s.id}`}>
+                        <span className="sv-n" aria-hidden="true">{i + 1}</span>
+                        <span className="sv-stext">
+                          <span className="sv-tag">{s.done ? 'Done' : current ? 'Now' : 'Next'}</span>
+                          {s.text}
+                        </span>
+                        <span className="sv-tick" aria-hidden="true">{s.done ? I.check : null}</span>
+                      </li>
+                    );
+                  })}
+                </ol>
+              ) : (
+                <p className="sv-empty">Your steps will show up here when your teacher gives a task.</p>
+              )}
             </section>
-          )}
+          </div>
+
+          {/* Chat tab: one calm conversation, newest at the bottom */}
+          <div id="sv-pane-chat" role="tabpanel" aria-labelledby="sv-tab-chat" className="sv-pane sv-pane-chat" hidden={view !== 'chat'}>
+            <div className="sv-chatbox" ref={chatBox}>
+              {chatCount === 0 && !waiting ? (
+                <div className="sv-chat-empty">
+                  <span className="sv-mic sm" aria-hidden="true">{I.mic}</span>
+                  <p><strong>Stuck or curious?</strong><br />Ask out loud, type a question, or ask for a hint. CoTeach AI answers using what your teacher said.</p>
+                </div>
+              ) : (
+                <ol className="sv-chat" aria-live="polite">
+                  {thread.map((t, i) => (
+                    <li key={`t${i}`} className="sv-turn" data-from={t.from}>
+                      <span className="sv-turn-who">{t.from === 'you' ? 'You' : t.kind === 'hint' ? 'CoTeach AI · hint' : 'CoTeach AI'}</span>
+                      <p className="sv-bubble">{t.text}</p>
+                      {t.from === 'fade' && (t.lesson || t.code) ? (
+                        <details className="sv-why">
+                          <summary>Why CoTeach AI said this</summary>
+                          <div className="sv-quotes">
+                            {t.lesson ? <p data-testid="text-lesson-quote"><span>Your teacher said</span>“{t.lesson}”</p> : null}
+                            {t.code ? <p data-testid="text-code-quote"><span>In your code</span><code>{t.code}</code></p> : null}
+                          </div>
+                        </details>
+                      ) : null}
+                    </li>
+                  ))}
+                  {talk.transcripts.slice(-8).map((t) => (
+                    <li key={t.id} className="sv-turn" data-from={t.source === 'student' ? 'you' : 'fade'}>
+                      <span className="sv-turn-who">{t.source === 'student' ? 'You' : 'CoTeach AI'}</span>
+                      <p className="sv-bubble">{t.text.replace(/\[[^\]]*\]\s*/g, '')}</p>
+                    </li>
+                  ))}
+                  {waiting && <li className="sv-turn" data-from="fade"><span className="sv-turn-who">CoTeach AI</span><p className="sv-bubble sv-dots" aria-label="CoTeach AI is thinking"><i /><i /><i /></p></li>}
+                </ol>
+              )}
+              <div ref={threadEnd} />
+            </div>
+          </div>
         </div>
 
         {/* 4. Ask: always in the same place */}

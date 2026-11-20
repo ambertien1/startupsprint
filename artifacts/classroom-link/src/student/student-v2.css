@@ -192,6 +192,36 @@
 .sv-again:active { transform: scale(.97); }
 .sv-again svg { width: 15px; height: 15px; }
 
+/* ── Two tabs: Steps | Ask CoTeach AI ── */
+.sv-fade { height: min(760px, calc(100dvh - 36px - clamp(18px, 4.2vw, 62px))); }
+.sv-fade[data-open='false'] { height: auto; }
+.sv-fbody { display: flex; flex-direction: column; gap: 12px; flex: 1; min-height: 0; overflow: hidden; }
+.sv-tabs { flex: none; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 5px; border-radius: 999px; background: rgb(70 55 25 / .07); }
+.sv-tabbtn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 12px; border-radius: 999px; font-weight: 700; font-size: .95rem; color: var(--muted); transition: background .25s var(--ease), color .2s, box-shadow .25s; }
+.sv-tabbtn svg { width: 16px; height: 16px; }
+.sv-tabbtn:hover { color: var(--ink); }
+.sv-tabbtn[aria-selected='true'] { background: #fff; color: var(--ink); box-shadow: var(--e1), 0 6px 14px -8px rgb(70 55 25 / .3); }
+.sv-tabnum { font-size: .72rem; font-weight: 800; padding: 1px 8px; border-radius: 999px; background: var(--sage-soft); color: var(--sage-deep); }
+.sv-pane { flex: 1; min-height: 0; overflow-y: auto; display: grid; gap: 16px; align-content: start; padding: 2px 2px 8px; scrollbar-width: thin; animation: sv-fadein .25s ease both; }
+.sv-pane-chat { display: flex; padding: 0; overflow: hidden; }
+.sv-chatbox { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 12px; border-radius: 22px; background: #fbf7f0; border: 1px solid var(--hair); scrollbar-width: thin; overscroll-behavior: contain; }
+.sv-chat { gap: 14px; }
+.sv-turn { animation: sv-fadein .3s ease both; }
+.sv-bubble { max-width: 86%; font-size: 1.02rem; line-height: 1.5; padding: 12px 16px; }
+.sv-turn[data-from='you'] .sv-bubble { background: linear-gradient(180deg, #303731, #1c201d); }
+.sv-why { width: 86%; font-size: .85rem; }
+.sv-why summary { cursor: pointer; padding: 2px 8px; font-weight: 700; color: var(--sage-deep); list-style: none; }
+.sv-why summary::-webkit-details-marker { display: none; }
+.sv-why summary::before { content: '＋ '; }
+.sv-why[open] summary::before { content: '－ '; }
+.sv-why .sv-quotes { margin-top: 6px; width: 100%; }
+.sv-chat-empty { height: 100%; min-height: 180px; display: grid; place-content: center; justify-items: center; gap: 12px; text-align: center; color: var(--muted); padding: 12px; }
+.sv-chat-empty p { margin: 0; max-width: 30ch; line-height: 1.5; }
+.sv-chat-empty strong { color: var(--ink); }
+.sv-mic.sm { width: 44px; height: 44px; }
+@keyframes sv-fadein { from { opacity: 0; } }
+@media (max-width: 760px) { .sv-fade { height: auto; } .sv-chatbox { max-height: 22rem; } }
+
 @keyframes sv-pop { from { opacity: 0; transform: translateY(-10px) scale(.97); } }
 @keyframes sv-in { from { opacity: 0; transform: translateY(8px); } }
 @keyframes sv-eq { 0%, 100% { transform: scaleY(.45); } 50% { transform: scaleY(1); } }
