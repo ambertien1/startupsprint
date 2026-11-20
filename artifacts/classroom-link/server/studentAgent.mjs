@@ -146,7 +146,12 @@ export async function runStudentAgent(ctx, { client } = {}) {
       };
     }
     if (!readCode) return { reject: "Read the student's code with get_student_code before acting." };
-    if (name === 'wait') return { done: { action: 'wait', reason: squash(input?.reason) } };
+    if (name === 'wait') {
+      // A student who asked something must always hear back.
+      if (ctx.trigger === 'question') return { reject: 'The student asked a question, so do not wait. Answer with speak_to_student (kind "answer"), or use not_covered if the lesson does not cover it.' };
+      if (ctx.trigger === 'hint') return { reject: 'The student asked for a hint, so do not wait. Give the smallest hint with speak_to_student, or flag the teacher if hints are used up.' };
+      return { done: { action: 'wait', reason: squash(input?.reason) } };
+    }
     if (name === 'flag_teacher') {
       const reason = squash(input?.reason);
       if (!reason) return { reject: 'Give the teacher a one-sentence reason.' };

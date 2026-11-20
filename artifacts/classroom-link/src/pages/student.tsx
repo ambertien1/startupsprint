@@ -36,6 +36,8 @@ function FadeMark() {
   );
 }
 
+type Turn = { from: 'you' | 'fade'; text: string; kind?: string; lesson?: string | null; code?: string | null };
+
 export default function Student() {
   const f = useStudentFade();
   const [question, setQuestion] = useState('');
@@ -47,13 +49,37 @@ export default function Student() {
   const [run, setRun] = useState(0);
   const htmlRef = useRef<HTMLTextAreaElement>(null);
   const cssRef = useRef<HTMLTextAreaElement>(null);
-  const hold = useHoldToAsk(f.askQuestion);
+  // The panel keeps two things apart: what to do now (guide) and the
+  // back-and-forth of questions and hints (thread).
+  const [guide, setGuide] = useState(f.message);
+  const [thread, setThread] = useState<Turn[]>([]);
+  const [waiting, setWaiting] = useState(false);
+  const threadEnd = useRef<HTMLDivElement>(null);
+  const you = (text: string) => { setThread((t) => [...t, { from: 'you' as const, text }].slice(-8)); setWaiting(true); };
+  const ask = (text: string) => { const sent = f.askQuestion(text); if (sent) you(text); return sent; };
+  const hint = () => { f.requestHint(); you('Can I have a hint?'); };
+  const hold = useHoldToAsk(ask);
 
   useEffect(() => { document.title = 'My Website · Fade'; }, []);
-  useEffect(() => { setOpen(true); }, [f.message]);
+  useEffect(() => {
+    setOpen(true);
+    const msg = f.message;
+    if (msg.kind === 'hint' || msg.kind === 'answer' || msg.kind === 'fallback') {
+      setThread((t) => [...t, { from: 'fade' as const, text: msg.text, kind: msg.kind, lesson: msg.lesson_quote, code: msg.code_quote }].slice(-8));
+      setWaiting(false);
+    } else {
+      setGuide(msg);
+    }
+  }, [f.message]);
+  useEffect(() => {
+    if (!waiting) return;
+    const timer = window.setTimeout(() => setWaiting(false), 15000);
+    return () => window.clearTimeout(timer);
+  }, [waiting, thread.length]);
+  useEffect(() => { threadEnd.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }, [thread.length, waiting]);
 
   const srcDoc = useMemo(() => buildPreview(f.html, f.css), [f.html, f.css]);
-  const m = f.message;
+  const m = guide;
 
   // "Hi Maya! First, add a title…" → a greeting line and the instruction under it.
   const split = /^(.{1,28}?[!.?])\s+(.+)$/s.exec(m.text);
@@ -67,9 +93,10 @@ export default function Student() {
   const submit = (e: FormEvent) => {
     e.preventDefault();
     const t = question.trim();
-    if (t && f.askQuestion(t)) setQuestion('');
+    if (t && ask(t)) setQuestion('');
   };
-  const note = [hold.note, f.questionNote].filter(Boolean).join(' ');
+  const note = hold.note.startsWith('You asked') ? '' : hold.note;
+  const pct = f.steps.length ? Math.round((f.steps.filter((x) => x.done).length / f.steps.length) * 100) : 0;
   const doneCount = f.steps.filter((s) => s.done).length;
 
   return (
@@ -132,40 +159,71 @@ export default function Student() {
         </header>
 
         <div className="sv-fbody" hidden={!open}>
+          {/* 1. What to do now */}
           <div className="sv-say" aria-live="polite" aria-atomic="true">
             <button type="button" className="sv-orb" key={m.text} onClick={f.replay} aria-label="Say it again" title="Say it again" data-testid="button-say-again">
               <span className="sv-wave" aria-hidden="true"><i /><i /><i /><i /><i /></span>
             </button>
             <div className="sv-say-text">
               <p className="sv-hi">{heading}</p>
-              <p className="sv-msg" data-testid="text-fade-message">{split ? body : m.text}</p>
+              <p className="sv-msg" data-testid="text-fade-message">{body}</p>
             </div>
           </div>
 
-          {(m.lesson_quote || m.code_quote) && (
-            <div className="sv-quotes">
-              {m.lesson_quote ? <p data-testid="text-lesson-quote"><span>Your teacher said</span>“{m.lesson_quote}”</p> : null}
-              {m.code_quote ? <p data-testid="text-code-quote"><span>In your code</span><code>{m.code_quote}</code></p> : null}
+          {/* 2. The steps, in order */}
+          <section className="sv-sec" aria-labelledby="sv-steps-h">
+            <div className="sv-sec-head">
+              <h2 id="sv-steps-h">Your steps</h2>
+              {f.steps.length > 0 && <span className="sv-sec-meta">{doneCount} of {f.steps.length} done</span>}
             </div>
-          )}
+            {f.steps.length > 0 && <div className="sv-prog" aria-hidden="true"><span style={{ transform: `scaleX(${pct / 100})` }} /></div>}
+            {f.steps.length ? (
+              <ol className="sv-steps">
+                {f.steps.map((s, i) => {
+                  const current = i === f.currentStepIndex && !s.done;
+                  return (
+                    <li key={s.id} className="sv-step" data-current={current} data-done={s.done} aria-current={current ? 'step' : undefined} data-testid={`step-${s.id}`}>
+                      <span className="sv-n" aria-hidden="true">{i + 1}</span>
+                      <span className="sv-stext">
+                        <span className="sv-tag">{s.done ? 'Done' : current ? 'Now' : 'Next'}</span>
+                        {s.text}
+                      </span>
+                      <span className="sv-tick" aria-hidden="true">{s.done ? I.check : null}</span>
+                    </li>
+                  );
+                })}
+              </ol>
+            ) : (
+              <p className="sv-empty">Your steps will show up here when your teacher gives a task.</p>
+            )}
+          </section>
 
-          {f.steps.length ? (
-            <ol className="sv-steps">
-              {f.steps.map((s, i) => {
-                const current = i === f.currentStepIndex && !s.done;
-                return (
-                  <li key={s.id} className="sv-step" data-current={current} data-done={s.done} aria-current={current ? 'step' : undefined} data-testid={`step-${s.id}`}>
-                    <span className="sv-n" aria-hidden="true">{i + 1}</span>
-                    <span className="sv-stext">{s.text}<span className="sv-sr">{s.done ? ' (done)' : current ? ' (your step now)' : ''}</span></span>
-                    <span className="sv-tick" aria-hidden="true">{s.done ? I.check : null}</span>
+          {/* 3. Questions and hints, as a conversation */}
+          {(thread.length > 0 || waiting) && (
+            <section className="sv-sec" aria-labelledby="sv-chat-h">
+              <div className="sv-sec-head"><h2 id="sv-chat-h">Questions</h2></div>
+              <ol className="sv-chat" aria-live="polite">
+                {thread.map((t, i) => (
+                  <li key={i} className="sv-turn" data-from={t.from}>
+                    <span className="sv-turn-who">{t.from === 'you' ? 'You' : t.kind === 'hint' ? 'Fade · hint' : 'Fade'}</span>
+                    <p className="sv-bubble">{t.text}</p>
+                    {t.from === 'fade' && (t.lesson || t.code) ? (
+                      <div className="sv-quotes">
+                        {t.lesson ? <p data-testid="text-lesson-quote"><span>Your teacher said</span>“{t.lesson}”</p> : null}
+                        {t.code ? <p data-testid="text-code-quote"><span>In your code</span><code>{t.code}</code></p> : null}
+                      </div>
+                    ) : null}
                   </li>
-                );
-              })}
-            </ol>
-          ) : (
-            <p className="sv-empty">Your steps will show up here when your teacher gives a task.</p>
+                ))}
+                {waiting && <li className="sv-turn" data-from="fade"><span className="sv-turn-who">Fade</span><p className="sv-bubble sv-dots" aria-label="Fade is thinking"><i /><i /><i /></p></li>}
+              </ol>
+              <div ref={threadEnd} />
+            </section>
           )}
+        </div>
 
+        {/* 4. Ask: always in the same place */}
+        <footer className="sv-foot" hidden={!open}>
           <button
             type="button"
             className="sv-ask"
@@ -181,9 +239,8 @@ export default function Student() {
             <span className="sv-mic" aria-hidden="true">{I.mic}</span>
             <span>{ASK_LABEL[hold.phase]}</span>
           </button>
-
           <div className="sv-row">
-            <button type="button" className="sv-link" onClick={f.requestHint} data-testid="button-hint">Give me a hint</button>
+            <button type="button" className="sv-link" onClick={hint} data-testid="button-hint">Give me a hint</button>
             <button type="button" className="sv-link" onClick={() => setTyping((v) => !v)} aria-expanded={typing}>{typing ? 'Hide typing' : 'Type instead'}</button>
           </div>
           {typing && (
@@ -194,7 +251,7 @@ export default function Student() {
             </form>
           )}
           {note ? <p className="sv-note" aria-live="polite" data-testid="text-question-note">{note}</p> : null}
-        </div>
+        </footer>
       </section>
     </div>
   );

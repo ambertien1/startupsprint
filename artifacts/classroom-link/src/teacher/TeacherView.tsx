@@ -180,34 +180,6 @@ function StepsList({ steps }: { steps: Step[] }) {
   );
 }
 
-function Shape() {
-  return (
-    <svg viewBox="0 0 320 260" className="td-shape" aria-hidden="true">
-      <defs>
-        <radialGradient id="tdSphere" cx="35%" cy="30%" r="75%">
-          <stop offset="0" stopColor="#fde3cf" /><stop offset=".55" stopColor="#f2b48f" /><stop offset="1" stopColor="#d98a64" />
-        </radialGradient>
-        <linearGradient id="tdTop" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#fbf6ea" /><stop offset="1" stopColor="#efe4cc" /></linearGradient>
-        <linearGradient id="tdLeft" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#e4d6b6" /><stop offset="1" stopColor="#cdbd98" /></linearGradient>
-        <linearGradient id="tdRight" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#d6c7a4" /><stop offset="1" stopColor="#b9a882" /></linearGradient>
-        <linearGradient id="tdPill" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#9fc0a0" /><stop offset="1" stopColor="#5f8a68" /></linearGradient>
-        <filter id="tdBlur"><feGaussianBlur stdDeviation="6" /></filter>
-      </defs>
-      <ellipse cx="165" cy="228" rx="118" ry="14" fill="#3f5a45" opacity=".16" filter="url(#tdBlur)" />
-      <g className="td-float a">
-        <path d="M70 120 L130 92 L190 120 L130 148 Z" fill="url(#tdTop)" />
-        <path d="M70 120 L130 148 L130 214 L70 186 Z" fill="url(#tdLeft)" />
-        <path d="M190 120 L130 148 L130 214 L190 186 Z" fill="url(#tdRight)" />
-      </g>
-      <g className="td-float b"><rect x="186" y="150" width="108" height="46" rx="23" transform="rotate(-24 240 173)" fill="url(#tdPill)" /></g>
-      <g className="td-float c">
-        <circle cx="206" cy="78" r="52" fill="url(#tdSphere)" />
-        <ellipse cx="190" cy="58" rx="16" ry="10" fill="#fff8ef" opacity=".55" />
-      </g>
-    </svg>
-  );
-}
-
 export default function TeacherView(p: TeacherViewProps) {
   const { voice, status, steps, sortedStudents } = p;
   const [tab, setTab] = useState<Tab>('teach');
@@ -357,7 +329,6 @@ export default function TeacherView(p: TeacherViewProps) {
                   </form>
                 )}
               </div>
-              <div className="td-art"><Shape /></div>
             </div>
 
             <section className="td-card td-steps-card" aria-labelledby="td-steps-h">

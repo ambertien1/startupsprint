@@ -197,3 +197,17 @@ test('sockets: a pause produces fade:say for the student; a flag shows "Leo need
     if (saved) process.env.ANTHROPIC_API_KEY = saved;
   }
 });
+
+test('a question or a hint request never ends in silence: wait is rejected', async () => {
+  const client = scripted([
+    [['get_student_code'], ['get_history']],
+    [['wait', { reason: 'Leo seems fine.' }]],
+    [['speak_to_student', { text: 'Good question. A closing tag has a slash.', kind: 'answer', code_quote: '</h1', lesson_quote: 'like </h1>' }]],
+  ]);
+  const out = await runStudentAgent(ctx({ trigger: 'question', question: 'What is a closing tag?' }), { client });
+  assert.equal(out.action, 'speak');
+  assert.match(out.log.find((l) => !l.ok).result, /do not wait/);
+  // A plain pause may still wait.
+  const quiet = scripted([[['get_student_code']], [['wait', { reason: 'Still typing.' }]]]);
+  assert.equal((await runStudentAgent(ctx(), { client: quiet })).action, 'wait');
+});

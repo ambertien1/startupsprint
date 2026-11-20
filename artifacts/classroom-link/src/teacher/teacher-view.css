@@ -289,6 +289,10 @@ button.td-scard:active { transform: translateY(0) scale(.99); }
 .td-dialog { border: 1px solid var(--td-hair); box-shadow: var(--td-e3); border-radius: 32px; }
 .td-banner { box-shadow: var(--td-e1); border: 1px solid #f1b08a; }
 
+/* Hero without the art panel: text only, full width */
+.td-card.td-hero { grid-template-columns: 1fr; }
+.td-sub { max-width: 40ch; }
+
 @media (max-width: 1024px) {
   .td-upper { grid-template-columns: 1fr; }
 }

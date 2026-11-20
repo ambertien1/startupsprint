@@ -144,6 +144,47 @@
 .sv-type button:disabled { opacity: .45; }
 .sv-note { margin: 0; text-align: center; font-size: .9rem; color: var(--muted); overflow-wrap: anywhere; }
 
+/* ── Organised panel: now · steps · questions · ask ── */
+.sv-fbody { padding: 6px 20px 16px; gap: 18px; align-content: start; }
+.sv-say { padding: 12px 14px; gap: 16px; border-radius: 26px; background: linear-gradient(180deg, #f3faef, #e7f3e1); border: 1px solid rgb(95 196 84 / .22); box-shadow: inset 0 1px 0 rgb(255 255 255 / .8); }
+.sv-orb { width: 72px; height: 72px; box-shadow: inset 0 1px 0 #fff, 0 0 0 7px rgb(127 207 107 / .12), 0 10px 20px -10px rgb(63 154 85 / .5); }
+.sv-wave { height: 34px; gap: 3px; } .sv-wave i { width: 3.5px; }
+.sv-hi { font-size: 1.25rem; } .sv-msg { font-size: 1.05rem; color: #3f463e; }
+.sv-sec { display: grid; gap: 10px; min-width: 0; }
+.sv-sec-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 0 4px; }
+.sv-sec-head h2 { margin: 0; font-size: .78rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.sv-sec-meta { font-size: .85rem; font-weight: 700; color: var(--sage-deep); }
+.sv-prog { height: 6px; border-radius: 99px; background: #ece5d7; overflow: hidden; margin: 0 4px; }
+.sv-prog span { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #a6e28a, #3f9a55); transform-origin: left; transition: transform .6s var(--ease); }
+.sv-steps { margin: 2px 0 0; gap: 8px; position: relative; }
+.sv-step { padding: 12px 14px; gap: 14px; border-radius: 18px; align-items: flex-start; }
+.sv-n { width: 34px; height: 34px; font-size: .92rem; }
+.sv-stext { font-size: 1rem; padding-top: 1px; }
+.sv-tag { display: block; font-size: .68rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 1px; }
+.sv-step[data-current='true'] .sv-tag { color: #2f7a3d; }
+.sv-step[data-done='true'] { background: #fbf8f2; box-shadow: none; }
+.sv-step[data-done='true'] .sv-stext { text-decoration: line-through; text-decoration-color: rgb(107 112 104 / .5); }
+.sv-step[data-done='true'] .sv-n { background: var(--sage-soft); border-color: transparent; color: var(--sage-deep); }
+.sv-step:not([data-current='true']):not([data-done='true']) { opacity: .78; }
+.sv-tick { margin-top: 4px; }
+
+.sv-chat { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.sv-turn { display: grid; gap: 4px; justify-items: start; animation: sv-in .4s var(--ease) both; }
+.sv-turn[data-from='you'] { justify-items: end; }
+.sv-turn-who { font-size: .7rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 0 6px; }
+.sv-bubble { margin: 0; max-width: 88%; padding: 11px 15px; border-radius: 6px 20px 20px 20px; background: #fff; border: 1px solid var(--hair); box-shadow: var(--e1); font-size: 1rem; line-height: 1.45; overflow-wrap: anywhere; }
+.sv-turn[data-from='you'] .sv-bubble { border-radius: 20px 6px 20px 20px; background: var(--ink); color: #fbf6ee; border-color: transparent; }
+.sv-turn .sv-quotes { width: 88%; }
+.sv-quotes p { padding: 8px 12px; border-radius: 14px; background: #fbf8f2; font-size: .88rem; border-left: 3px solid var(--sage); }
+.sv-dots { display: inline-flex; gap: 5px; align-items: center; padding: 14px 16px; }
+.sv-dots i { width: 7px; height: 7px; border-radius: 50%; background: #9aa097; animation: sv-dot 1.2s ease-in-out infinite; }
+.sv-dots i:nth-child(2) { animation-delay: .15s; } .sv-dots i:nth-child(3) { animation-delay: .3s; }
+@keyframes sv-dot { 0%, 60%, 100% { transform: translateY(0); opacity: .5; } 30% { transform: translateY(-4px); opacity: 1; } }
+
+.sv-foot { flex: none; display: grid; gap: 10px; padding: 14px 20px 18px; border-top: 1px solid var(--hair); background: linear-gradient(180deg, rgb(255 253 250 / .6), rgb(253 244 234 / .9)); border-radius: 0 0 34px 34px; }
+.sv-ask { margin-top: 0; min-height: 68px; padding: 10px 18px; font-size: 1.1rem; border-radius: 24px; }
+.sv-mic { width: 46px; height: 46px; }
+
 @keyframes sv-pop { from { opacity: 0; transform: translateY(-10px) scale(.97); } }
 @keyframes sv-in { from { opacity: 0; transform: translateY(8px); } }
 @keyframes sv-eq { 0%, 100% { transform: scaleY(.45); } 50% { transform: scaleY(1); } }

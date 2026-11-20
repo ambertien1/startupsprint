@@ -10,8 +10,29 @@ const MAX_CLIPS = 300;
 const clips = new Map(); // id -> Buffer (mp3)
 const pending = new Map(); // id -> Promise<string|null>
 
+// If the configured voice id is rejected, use the account's first available
+// voice instead of going silent. Remembered for the life of the server.
+let fallbackVoiceId = null;
+async function findAnotherVoice(logger) {
+  try {
+    const response = await fetch('https://api.elevenlabs.io/v1/voices', {
+      headers: { 'xi-api-key': process.env.ELEVENLABS_API_KEY },
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+    if (!response.ok) throw new Error(`ElevenLabs ${response.status} listing voices`);
+    const data = await response.json();
+    const voice = (data?.voices || []).find((v) => v?.voice_id);
+    if (!voice) throw new Error('this ElevenLabs account has no voices');
+    logger?.warn({ name: voice.name }, 'ELEVENLABS_VOICE_ID was not found; using another voice from the account');
+    return voice.voice_id;
+  } catch (error) {
+    logger?.error({ error: error instanceof Error ? error.message : String(error) }, 'could not find another voice');
+    return null;
+  }
+}
+
 export function hasVoice() {
-  return Boolean(process.env.ELEVENLABS_API_KEY && process.env.ELEVENLABS_VOICE_ID);
+  return Boolean(process.env.ELEVENLABS_API_KEY && (process.env.ELEVENLABS_VOICE_ID || fallbackVoiceId));
 }
 
 function clipId(text) {
@@ -44,12 +65,17 @@ export async function speak(text, { base = '/', logger } = {}) {
   const job = (async () => {
     const started = Date.now();
     try {
-      const response = await fetch(`${API}/${encodeURIComponent(process.env.ELEVENLABS_VOICE_ID)}?output_format=mp3_44100_128`, {
+      const request = (voiceId) => fetch(`${API}/${encodeURIComponent(voiceId)}?output_format=mp3_44100_128`, {
         method: 'POST',
         headers: { 'xi-api-key': process.env.ELEVENLABS_API_KEY, 'Content-Type': 'application/json', Accept: 'audio/mpeg' },
         body: JSON.stringify({ text: line, model_id: MODEL }),
         signal: AbortSignal.timeout(TIMEOUT_MS),
       });
+      let response = await request(fallbackVoiceId || process.env.ELEVENLABS_VOICE_ID);
+      if (response.status === 404 && !fallbackVoiceId) {
+        fallbackVoiceId = await findAnotherVoice(logger);
+        if (fallbackVoiceId) response = await request(fallbackVoiceId);
+      }
       if (!response.ok) {
         const detail = (await response.text().catch(() => '')).slice(0, 200);
         throw new Error(`ElevenLabs ${response.status}: ${detail}`);
