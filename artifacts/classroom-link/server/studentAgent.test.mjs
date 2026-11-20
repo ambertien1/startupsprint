@@ -185,8 +185,10 @@ test('sockets: a pause produces fade:say for the student; a flag shows "Leo need
     assert.match(woke[0].lesson, /closing tag with a slash/);
 
     const flagged = next(teacher, 'student:update', (u) => u.status === 'needs_help');
+    const told = next(leo, 'fade:say', (p) => p.kind === 'flag');
     await leo.emitWithAck('hint:request', { studentId: 'leo' });
     const flag = await flagged;
+    assert.match((await told).text, /asked your teacher/);
     assert.equal(flag.sentence, 'Leo needs you');
     assert.equal(flag.code, LEO);
     assert.match(flag.reason, /closing tag/);
@@ -210,4 +212,16 @@ test('a question or a hint request never ends in silence: wait is rejected', asy
   // A plain pause may still wait.
   const quiet = scripted([[['get_student_code']], [['wait', { reason: 'Still typing.' }]]]);
   assert.equal((await runStudentAgent(ctx(), { client: quiet })).action, 'wait');
+});
+
+test('a question is always answered: no flag, no hint budget, even when hints are used up', async () => {
+  const client = scripted([
+    [['get_student_code'], ['get_history']],
+    [['flag_teacher', { reason: 'Hints are used up.' }]],
+    [['speak_to_student', { text: 'The body is the part between the body tags.', kind: 'hint', code_quote: '</h1', lesson_quote: 'HTML is made of tags' }]],
+  ]);
+  const out = await runStudentAgent(ctx({ trigger: 'question', question: 'How do I find the body?', hints: ['one', 'two'] }), { client });
+  assert.equal(out.action, 'speak');
+  assert.equal(out.kind, 'answer');
+  assert.match(out.log.find((l) => !l.ok).result, /Answer it first/);
 });

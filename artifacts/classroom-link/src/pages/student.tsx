@@ -64,7 +64,7 @@ export default function Student() {
   useEffect(() => {
     setOpen(true);
     const msg = f.message;
-    if (msg.kind === 'hint' || msg.kind === 'answer' || msg.kind === 'fallback') {
+    if (msg.kind === 'hint' || msg.kind === 'answer' || msg.kind === 'fallback' || msg.kind === 'flag') {
       setThread((t) => [...t, { from: 'fade' as const, text: msg.text, kind: msg.kind, lesson: msg.lesson_quote, code: msg.code_quote }].slice(-8));
       setWaiting(false);
     } else {

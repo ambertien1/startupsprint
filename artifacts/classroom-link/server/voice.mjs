@@ -23,7 +23,7 @@ async function findAnotherVoice(logger) {
     const data = await response.json();
     const voice = (data?.voices || []).find((v) => v?.voice_id);
     if (!voice) throw new Error('this ElevenLabs account has no voices');
-    logger?.warn({ name: voice.name }, 'ELEVENLABS_VOICE_ID was not found; using another voice from the account');
+    logger?.warn({ name: voice.name }, 'ELEVENLABS_VOICE_ID is missing or not found; using another voice from the account');
     return voice.voice_id;
   } catch (error) {
     logger?.error({ error: error instanceof Error ? error.message : String(error) }, 'could not find another voice');
@@ -32,7 +32,8 @@ async function findAnotherVoice(logger) {
 }
 
 export function hasVoice() {
-  return Boolean(process.env.ELEVENLABS_API_KEY && (process.env.ELEVENLABS_VOICE_ID || fallbackVoiceId));
+  // The API key is enough: with no voice id set, one is picked from the account.
+  return Boolean(process.env.ELEVENLABS_API_KEY);
 }
 
 function clipId(text) {
@@ -71,7 +72,13 @@ export async function speak(text, { base = '/', logger } = {}) {
         body: JSON.stringify({ text: line, model_id: MODEL }),
         signal: AbortSignal.timeout(TIMEOUT_MS),
       });
-      let response = await request(fallbackVoiceId || process.env.ELEVENLABS_VOICE_ID);
+      let voiceId = fallbackVoiceId || (process.env.ELEVENLABS_VOICE_ID || '').trim();
+      if (!voiceId) {
+        fallbackVoiceId = await findAnotherVoice(logger);
+        voiceId = fallbackVoiceId;
+        if (!voiceId) throw new Error('no ELEVENLABS_VOICE_ID set and no voice found on the account');
+      }
+      let response = await request(voiceId);
       if (response.status === 404 && !fallbackVoiceId) {
         fallbackVoiceId = await findAnotherVoice(logger);
         if (fallbackVoiceId) response = await request(fallbackVoiceId);

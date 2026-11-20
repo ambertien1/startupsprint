@@ -153,13 +153,16 @@ export async function runStudentAgent(ctx, { client } = {}) {
       return { done: { action: 'wait', reason: squash(input?.reason) } };
     }
     if (name === 'flag_teacher') {
+      if (ctx.trigger === 'question') return { reject: 'The student asked a question. Answer it first with speak_to_student (kind "answer"); answers do not use up hints. Use not_covered if the lesson does not cover it.' };
       const reason = squash(input?.reason);
       if (!reason) return { reject: 'Give the teacher a one-sentence reason.' };
       return { done: { action: 'flag', reason } };
     }
     if (name === 'speak_to_student') {
       const text = squash(input?.text);
-      const kind = ['hint', 'answer', 'cheer'].includes(input?.kind) ? input.kind : 'hint';
+      let kind = ['hint', 'answer', 'cheer'].includes(input?.kind) ? input.kind : 'hint';
+      // A reply to a question is an answer: it never uses up the student's hints.
+      if (ctx.trigger === 'question' && kind === 'hint') kind = 'answer';
       const codeQuote = String(input?.code_quote ?? '');
       const lessonQuote = String(input?.lesson_quote ?? '');
       if (!text) return { reject: 'text is empty.' };

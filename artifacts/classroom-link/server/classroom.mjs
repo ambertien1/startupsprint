@@ -70,7 +70,14 @@ export function createClassroom(io, logger, { speak = elevenSpeak, base = '/', a
   // Wake the student agent. It decides; this only carries out the decision.
   async function wakeAgent(studentId, trigger, question = '') {
     const w = state.work.get(studentId);
-    if (!w || w.busy) return { ok: false, error: 'Fade is already thinking.' };
+    if (!w) return { ok: false, error: 'Unknown student.' };
+    if (w.busy) {
+      // A pause can be skipped, but a question or hint request waits its turn.
+      if (trigger === 'pause') return { ok: false, error: 'Fade is already thinking.' };
+      const deadline = Date.now() + 10000;
+      while (w.busy && Date.now() < deadline) await new Promise((r) => setTimeout(r, 150));
+      if (w.busy) return { ok: false, error: 'Fade is still thinking. Try again in a moment.' };
+    }
     if (!state.steps.length && trigger !== 'question') return { ok: false, error: 'No steps yet.' };
     w.busy = true;
     try {
@@ -102,6 +109,10 @@ export function createClassroom(io, logger, { speak = elevenSpeak, base = '/', a
       } else if (result.action === 'flag') {
         w.flagged = true;
         tellTeacher(studentId, { reason: result.reason, code: w.html, reasoning });
+        // The student always hears what happened; they are never left waiting.
+        const text = `${w.name}, I've asked your teacher to come and help you. Keep going if you can.`;
+        const audioUrl = await speak(text, { base, logger });
+        for (const s of socketsFor(studentId)) s.emit('fade:say', { text, audioUrl, kind: 'flag', code_quote: '', lesson_quote: '' });
       } else {
         tellTeacher(studentId, { reasoning });
       }
