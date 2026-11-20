@@ -100,6 +100,8 @@ function StudentWorkspace() {
   useEffect(() => { threadEnd.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }, [thread.length, waiting, talk.transcripts.length]);
 
   const srcDoc = useMemo(() => buildPreview(f.html, f.css), [f.html, f.css]);
+  // A <title> tag names the browser tab, so show it on the preview's tab.
+  const pageTitle = /<title\b[^>]*>([^<]*)/i.exec(f.html)?.[1]?.trim() || '';
   const m = guide;
 
   // "Hi Maya! First, add a title…" → a greeting line and the instruction under it.
@@ -163,7 +165,7 @@ function StudentWorkspace() {
           </main>
 
           <section className="sv-preview" aria-label="Live preview">
-            <div className="sv-phead">{I.screen}<span>Preview</span></div>
+            <div className="sv-phead">{I.screen}<span>Preview</span>{pageTitle ? <span className="sv-ptitle" data-testid="text-page-title">{pageTitle}</span> : null}</div>
             <iframe key={run} title="Live preview of your page" sandbox="" srcDoc={srcDoc} data-testid="frame-preview" />
           </section>
         </div>
