@@ -13,8 +13,8 @@ Fade listens to the teacher and turns what she says into step-by-step guidance o
 
 ## The flow
 
-1. Teacher teaches. Fade listens and keeps the transcript (the "lesson").
-2. Teacher holds the task button and says the task. The STEPS AGENT rewrites it into short ordered steps. Teacher confirms (can skip in demo).
+1. Teacher clicks the mic once and teaches. Fade listens and keeps the transcript (the "lesson"). Click again to stop. (Click to start and stop, not hold.)
+2. Teaching and tasks are one stream: the teacher does not mark tasks. As she teaches, the STEPS AGENT listens along and, whenever she tells students to do something, rewrites it into short ordered steps. Plain explanation produces no steps.
 3. Every student page gets the steps within ~2s. Fade says the current step aloud, by name.
 4. Student types. Steps tick off when their code passes that step's check.
 5. Student holds "Ask" and asks a question out loud. Fade answers from the lesson, in the teacher's words, with a hint and never the answer.
@@ -53,13 +53,20 @@ Fade listens to the teacher and turns what she says into step-by-step guidance o
 
 | Event | Direction | Payload |
 | --- | --- | --- |
-| `lesson:chunk` | teacher → server | `{ text }` |
-| `task:spoken` | teacher → server | `{ text }` |
+| `lesson:chunk` | teacher → server | `{ text }` — everything the teacher says; the steps agent picks tasks out of it |
+| `task:spoken` | teacher → server | `{ text }` — optional: force this text to be treated as a task |
 | `steps:new` | server → students | `{ steps: [{ id, text, done }] }` |
 | `code:update` | student → server | `{ studentId, html, css }` |
 | `question` | student → server | `{ studentId, text }` |
 | `fade:say` | server → student | `{ text, audioUrl, kind, code_quote, lesson_quote }` |
 | `student:update` | server → teacher | `{ studentId, name, stepIndex, status, sentence }` |
+| `student:join` | student → server | `{ studentId, name }` — on page load |
+| `student:idle` | student → server | `{ studentId }` — after ~20s without typing |
+| `hint:request` | student → server | `{ studentId }` — Hint button |
+| `steps:question` | server → teacher | `{ question }` — only for `task:spoken` |
+| `teacher:helped` | teacher → server | `{ studentId }` — clears "needs you" |
+
+`student:update` may also carry `reason`, `code`, `said`, `hintsLeft` and `reasoning` (the agent's tool-call log). Audio input goes to `POST /stt` (raw audio body) and returns `{ ok, text }`.
 
 Fake step list to build against until the agent works:
 

@@ -179,11 +179,30 @@ export function createClassroom(io, logger, { speak = elevenSpeak, base = '/', a
       tellTeacher(String(payload.studentId));
     });
 
+    // The teacher teaching. The steps agent listens along and picks out any
+    // task for the class, so she never has to mark it herself.
     socket.on('lesson:chunk', (payload, acknowledge) => {
+      const reply = ack(acknowledge);
       const text = clean(payload);
-      if (!text) return ack(acknowledge)({ ok: false, error: 'No text.' });
-      state.lesson.push(text);
-      ack(acknowledge)({ ok: true, chunks: state.lesson.length });
+      if (!text) return reply({ ok: false, error: 'No text.' });
+      queue = queue
+        .then(async () => {
+          const result = await makeSteps({ taskText: text, lesson: state.lesson.join('\n'), currentSteps: state.steps, mode: 'listen' });
+          state.lesson.push(text);
+          logger.info({ mode: 'listen', source: result.source, ms: result.ms, task: result.hasTask, steps: result.steps.length, error: result.error }, 'steps agent');
+          if (result.hasTask) {
+            state.steps = result.steps;
+            io.emit('steps:new', { steps: state.steps });
+            sayToAllStudents();
+            for (const id of state.work.keys()) tellTeacher(id);
+          }
+          reply({ ok: true, chunks: state.lesson.length, task: result.hasTask, source: result.source, steps: state.steps, ms: result.ms, error: result.error });
+        })
+        .catch((error) => {
+          logger.error({ err: error }, 'lesson:chunk failed');
+          state.lesson.push(text);
+          reply({ ok: true, chunks: state.lesson.length, task: false });
+        });
     });
 
     socket.on('task:spoken', (payload, acknowledge) => {

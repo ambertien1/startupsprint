@@ -14,6 +14,9 @@ const StepsSchema = z.object({
       text: z.string().describe('One short sentence addressed to the student.'),
     }),
   ),
+  has_task: z
+    .boolean()
+    .describe('True when the teacher just told students to do something on their screens. False when she is only explaining.'),
   question: z
     .string()
     .describe('Empty string normally. If the task is too unclear to turn into steps, one short question for the teacher.'),
@@ -35,6 +38,12 @@ When there is already a step list, the teacher's new words are a change to it. R
 The lesson transcript, when given, is background only: use it to understand her words, never to invent steps she did not ask for.
 
 If you cannot tell what the student should do, do not guess: return an empty steps list and put one short question for the teacher in "question". Otherwise "question" is an empty string.`;
+
+// Added to the system prompt while the teacher is teaching and nobody has
+// marked what she said as a task: the agent listens and picks tasks out itself.
+const LISTENING = `
+
+Right now the teacher is teaching, and you are listening along. Most of what she says is explanation, stories, questions to the class, or classroom management. None of that is a step. Set has_task to true only when what she just said tells students to do something on their own screens ("add...", "now type...", "go ahead and make...", "I want you to..."). Then return the full updated step list as described above. When she is only explaining, set has_task to false, return the current steps unchanged with their ids, and leave question empty. Never ask a question while listening: if you are not sure it was a task, it was not.`;
 
 let client = null;
 function getClient() {
@@ -94,33 +103,53 @@ export function fallbackSteps(taskText) {
 /**
  * @returns {Promise<{ steps: {id:string,text:string,done:boolean}[], question: string, source: 'agent'|'fallback', ms: number, error?: string }>}
  */
-export async function makeSteps({ taskText, lesson = '', currentSteps = [] }) {
+const ACTION_START = /^(now |next |then |okay |ok |so |please |go ahead and |i want you to |everyone |let's )*(add|type|write|make|create|change|put|give|open|click|delete|remove|move|set|use|try)\b/i;
+
+/**
+ * mode "task": the teacher marked this as a task. mode "listen": she is
+ * teaching and the agent decides whether there is a task in what she said.
+ * hasTask is false only in listen mode when there was nothing to do.
+ * @returns {Promise<{ steps: {id:string,text:string,done:boolean}[], question: string, hasTask: boolean, source: 'agent'|'fallback', ms: number, error?: string }>}
+ */
+export async function makeSteps({ taskText, lesson = '', currentSteps = [], mode = 'task' }) {
+  const listening = mode === 'listen';
+  // Offline stand-in for listening: only sentences that start with an action count.
+  const offline = () => {
+    if (!listening) return { steps: fallbackSteps(taskText), hasTask: true };
+    const found = taskText.split(/(?<=[.!?])\s+/).filter((t) => ACTION_START.test(t.trim())).join(' ');
+    return found ? { steps: [...currentSteps, ...fallbackSteps(found)], hasTask: true } : { steps: currentSteps, hasTask: false };
+  };
   const started = Date.now();
   const done = (out) => ({ ...out, ms: Date.now() - started });
   if (!hasCredentials()) {
-    return done({ steps: fallbackSteps(taskText), question: '', source: 'fallback', error: 'ANTHROPIC_API_KEY is not set' });
+    return done({ ...offline(), question: '', source: 'fallback', error: 'ANTHROPIC_API_KEY is not set' });
   }
   try {
     const response = await getClient().messages.parse({
       model: MODEL,
       max_tokens: 2000,
       output_config: { effort: 'low', format: zodOutputFormat(StepsSchema) },
-      system: SYSTEM,
+      system: listening ? SYSTEM + LISTENING : SYSTEM,
       messages: [{ role: 'user', content: buildUserMessage({ taskText, lesson, currentSteps }) }],
     });
     if (response.stop_reason === 'refusal' || !response.parsed_output) {
       throw new Error(`no usable output (stop_reason: ${response.stop_reason})`);
     }
-    const { steps, question } = response.parsed_output;
+    const { steps, question, has_task: hasTask } = response.parsed_output;
+    if (listening && !hasTask) return done({ steps: currentSteps, question: '', hasTask: false, source: 'agent' });
     const merged = mergeSteps(steps, currentSteps);
+    if (listening) {
+      if (!merged.length) return done({ steps: currentSteps, question: '', hasTask: false, source: 'agent' });
+      return done({ steps: merged, question: '', hasTask: true, source: 'agent' });
+    }
     if (!merged.length && !question.trim()) throw new Error('model returned no steps and no question');
-    return done({ steps: merged, question: question.trim(), source: 'agent' });
+    return done({ steps: merged, question: question.trim(), hasTask: true, source: 'agent' });
   } catch (error) {
     let reason = error instanceof Error ? error.message : String(error);
     if (error instanceof Anthropic.AuthenticationError) reason = 'the Anthropic API key was rejected';
     else if (error instanceof Anthropic.RateLimitError) reason = 'rate limited by the Anthropic API';
     else if (error instanceof Anthropic.APIConnectionTimeoutError) reason = `no reply within ${TIMEOUT_MS}ms`;
     else if (error instanceof Anthropic.APIError) reason = `Anthropic API error ${error.status}: ${error.message}`;
-    return done({ steps: fallbackSteps(taskText), question: '', source: 'fallback', error: reason });
+    return done({ ...offline(), question: '', source: 'fallback', error: reason });
   }
 }

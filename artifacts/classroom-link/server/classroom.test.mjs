@@ -63,7 +63,9 @@ test('task:spoken from the teacher reaches a student as steps:new', async () => 
     const joinAck = await student.emitWithAck('student:join', { studentId: 'maya', name: 'Maya' });
     assert.equal(joinAck.ok, true);
     const lessonAck = await teacher.emitWithAck('lesson:chunk', { text: 'HTML uses tags like h1 for titles.' });
-    assert.deepEqual(lessonAck, { ok: true, chunks: 1 });
+    assert.equal(lessonAck.ok, true);
+    assert.equal(lessonAck.chunks, 1);
+    assert.equal(lessonAck.task, false); // explaining only: no steps sent
     const taskAck = await teacher.emitWithAck('task:spoken', {
       text: 'Add a title to your page with an h1 tag, then add a paragraph under it.',
     });
@@ -155,5 +157,37 @@ test('stt: audio in, words out; clear errors for no key and no audio', async () 
   } finally {
     http.close();
     if (saved) process.env.ELEVENLABS_API_KEY = saved; else delete process.env.ELEVENLABS_API_KEY;
+  }
+});
+
+test('teaching is one stream: explanation makes no steps, a task said while teaching does', async () => {
+  const saved = { key: process.env.ANTHROPIC_API_KEY, token: process.env.ANTHROPIC_AUTH_TOKEN };
+  delete process.env.ANTHROPIC_API_KEY;
+  delete process.env.ANTHROPIC_AUTH_TOKEN;
+  const http = createServer();
+  const io = new Server(http);
+  createClassroom(io, { info() {}, error() {} }, { speak: async () => null });
+  await new Promise((r) => http.listen(0, r));
+  const url = `http://localhost:${http.address().port}`;
+  const teacher = connect(url);
+  const student = connect(url);
+  try {
+    await Promise.all([teacher, student].map((s) => new Promise((r) => s.on('connect', r))));
+    let stepEvents = 0;
+    student.on('steps:new', () => { stepEvents += 1; });
+    const a = await teacher.emitWithAck('lesson:chunk', { text: 'HTML is made of tags. A tag has a name inside angle brackets.' });
+    assert.equal(a.task, false);
+    assert.equal(stepEvents, 0);
+    const got = new Promise((r) => student.once('steps:new', r));
+    const b = await teacher.emitWithAck('lesson:chunk', {
+      text: 'The h1 tag makes a big title. Now add a title to your page with an h1 tag, then add a paragraph under it.',
+    });
+    assert.equal(b.task, true);
+    assert.equal(b.chunks, 2);
+    assert.equal((await got).steps.length, 2);
+  } finally {
+    teacher.close(); student.close(); io.close();
+    if (saved.key) process.env.ANTHROPIC_API_KEY = saved.key;
+    if (saved.token) process.env.ANTHROPIC_AUTH_TOKEN = saved.token;
   }
 });
