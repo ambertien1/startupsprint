@@ -208,3 +208,7 @@
 @media (prefers-reduced-motion: reduce) {
   .sv *, .sv-fade { animation: none !important; transition: none !important; }
 }
+
+/* Sound-on prompt: browsers block audio until the student clicks once. */
+.sv-sound { display: block; width: 100%; margin: 0 0 10px; min-height: 44px; padding: 10px 16px; border-radius: 999px; border: 1px solid var(--ink); background: var(--ink); color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+.sv-sound:hover { opacity: .9; }
