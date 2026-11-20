@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { MAX_LEN } from '@/lib/socket';
 import type { StudentUpdate, TeacherViewProps, Step } from './types';
+import VoiceWave from './VoiceWave';
 import './teacher-view.css';
 
 type Tab = 'teach' | 'students' | 'history';
@@ -306,6 +307,7 @@ export default function TeacherView(p: TeacherViewProps) {
                   <p className="td-timer"><span className={`td-rec ${recording ? 'on' : ''}`} aria-hidden="true" />
                     <span role="timer" aria-label="Recording time">{timer}</span></p>
                 )}
+                {recording && <VoiceWave stream={voice.stream} />}
                 <div className="td-controls">
                   <button type="button" data-testid="voice-teach" disabled={blocked} aria-pressed={active}
                     aria-describedby="td-voice-note" className="td-btn td-btn-dark lg"

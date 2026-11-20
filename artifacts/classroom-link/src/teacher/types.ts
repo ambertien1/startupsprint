@@ -29,6 +29,7 @@ export type StudentUpdate = {
   };
 };
 export type TeacherVoice = {
+  stream: MediaStream | null;
   phase: 'idle' | 'requesting' | 'recording' | 'finishing' | 'paused';
   elapsed: number;
   pending: number;

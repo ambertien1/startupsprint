@@ -7,7 +7,7 @@ import { currentStepIndex } from './checks.mjs';
 
 const MAX_TEXT = 4000;
 
-export function createClassroom(io, logger, { speak = elevenSpeak, base = '/', agent = runStudentAgent } = {}) {
+export function createClassroom(io, logger, { speak = elevenSpeak, base = '/', agent = runStudentAgent, stepsAgent = makeSteps } = {}) {
   const state = {
     students: new Map(), // socket.id -> { studentId, name }
     work: new Map(), // studentId -> { name, html, css, hints, lastTyped, busy, flagged }
@@ -26,12 +26,16 @@ export function createClassroom(io, logger, { speak = elevenSpeak, base = '/', a
   // audioUrl is null when voice isn't available.
   async function sayCurrentStep(socket, { greet }) {
     const student = state.students.get(socket.id);
-    const index = state.steps.findIndex((s) => !s.done);
-    if (!student || index === -1) return;
-    const step = state.steps[index];
+    if (!student) return;
+    const steps = state.steps;
+    const index = currentStepIndex(steps, state.work.get(student.studentId)?.html || '');
+    if (index >= steps.length) return;
+    const step = steps[index];
     const body = `${step.text.charAt(0).toLowerCase()}${step.text.slice(1)}`;
     const text = greet && index === 0 ? `Hi ${student.name}! First, ${body}` : `${student.name}, next, ${body}`;
     const audioUrl = await speak(text, { base, logger });
+    // A newer task or code edit can arrive while the audio is generated.
+    if (state.steps !== steps || currentStepIndex(steps, state.work.get(student.studentId)?.html || '') !== index) return;
     socket.emit('fade:say', { text, audioUrl, kind: 'step', code_quote: '', lesson_quote: '' });
   }
   const workFor = (studentId, name) => {
@@ -118,6 +122,12 @@ export function createClassroom(io, logger, { speak = elevenSpeak, base = '/', a
       }),
     );
 
+  function announceSteps() {
+    io.emit('steps:new', { steps: state.steps });
+    for (const studentId of state.work.keys()) tellTeacher(studentId);
+    void sayToAllStudents(); // Speech must not delay step delivery or the acknowledgement.
+  }
+
   io.on('connection', (socket) => {
     // A student who joins late still gets the current steps.
     if (state.steps.length) socket.emit('steps:new', { steps: state.steps });
@@ -187,14 +197,12 @@ export function createClassroom(io, logger, { speak = elevenSpeak, base = '/', a
       if (!text) return reply({ ok: false, error: 'No text.' });
       queue = queue
         .then(async () => {
-          const result = await makeSteps({ taskText: text, lesson: state.lesson.join('\n'), currentSteps: state.steps, mode: 'listen' });
+          const result = await stepsAgent({ taskText: text, lesson: state.lesson.join('\n'), currentSteps: state.steps, mode: 'listen' });
           state.lesson.push(text);
           logger.info({ mode: 'listen', source: result.source, ms: result.ms, task: result.hasTask, steps: result.steps.length, error: result.error }, 'steps agent');
           if (result.hasTask) {
             state.steps = result.steps;
-            io.emit('steps:new', { steps: state.steps });
-            sayToAllStudents();
-            for (const id of state.work.keys()) tellTeacher(id);
+            announceSteps();
           }
           reply({ ok: true, chunks: state.lesson.length, task: result.hasTask, source: result.source, steps: state.steps, ms: result.ms, error: result.error });
         })
@@ -211,7 +219,7 @@ export function createClassroom(io, logger, { speak = elevenSpeak, base = '/', a
       if (!taskText) return reply({ ok: false, error: 'No task text.' });
       queue = queue
         .then(async () => {
-          const result = await makeSteps({
+          const result = await stepsAgent({
             taskText,
             lesson: state.lesson.join('\n'),
             currentSteps: state.steps,
@@ -227,8 +235,7 @@ export function createClassroom(io, logger, { speak = elevenSpeak, base = '/', a
           }
           state.lesson.push(taskText); // the task is the teacher's words too
           state.steps = result.steps;
-          io.emit('steps:new', { steps: state.steps });
-          sayToAllStudents(); // not awaited: steps reach the screen first
+          announceSteps();
           reply({ ok: true, source: result.source, steps: state.steps, ms: result.ms, error: result.error });
         })
         .catch((error) => {

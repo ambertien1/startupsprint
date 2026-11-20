@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { TeacherVoice } from './types';
 
-type AudioPiece = { recorder: MediaRecorder; startedAt: number; endedAt?: number; chunks: Blob[] };
+type AudioPiece = { recorder: MediaRecorder; startedAt: number; endedAt?: number; chunks: Blob[]; flush: boolean };
 type Session = {
   running: boolean;
   paused: boolean;
@@ -17,6 +17,7 @@ type Session = {
 };
 
 export function useTeacherVoice(onTranscript: (text: string) => Promise<boolean>): TeacherVoice {
+  const [stream, setStream] = useState<MediaStream | null>(null);
   const [phase, setPhase] = useState<TeacherVoice['phase']>('idle');
   const [elapsed, setElapsed] = useState(0);
   const [pending, setPending] = useState(0);
@@ -31,7 +32,10 @@ export function useTeacherVoice(onTranscript: (text: string) => Promise<boolean>
   const onTranscriptRef = useRef(onTranscript);
   onTranscriptRef.current = onTranscript;
 
-  const releaseTracks = (session: Session) => session.stream?.getTracks().forEach(track => track.stop());
+  const releaseTracks = (session: Session) => {
+    session.stream?.getTracks().forEach(track => track.stop());
+    if (alive.current) setStream(previous => previous === session.stream ? null : previous);
+  };
   const clearTimers = (session: Session) => {
     window.clearInterval(session.rotation);
     window.clearInterval(session.ticker);
@@ -110,17 +114,19 @@ export function useTeacherVoice(onTranscript: (text: string) => Promise<boolean>
     setPhase('paused');
     setNote('Paused. Resume when you’re ready.');
     if (session.piece.recorder.state !== 'inactive') {
+      // Pauses are deliberate clip boundaries, including a short first utterance.
+      session.piece.flush = true;
       session.piece.endedAt = performance.now();
       session.piece.recorder.stop();
     }
     releaseTracks(session);
   }
 
-  function startPiece(session: Session) {
+  function startPiece(session: Session, resumed = false) {
     const mimeType = ['audio/webm;codecs=opus', 'audio/ogg;codecs=opus', 'audio/mp4']
       .find(type => MediaRecorder.isTypeSupported?.(type));
     const recorder = new MediaRecorder(session.stream!, mimeType ? { mimeType } : undefined);
-    const piece: AudioPiece = { recorder, chunks: [], startedAt: performance.now() };
+    const piece: AudioPiece = { recorder, chunks: [], startedAt: performance.now(), flush: resumed };
     session.piece = piece;
     recorder.ondataavailable = event => { if (event.data.size) piece.chunks.push(event.data); };
     recorder.onstop = () => {
@@ -131,7 +137,7 @@ export function useTeacherVoice(onTranscript: (text: string) => Promise<boolean>
       }
       const duration = (piece.endedAt ?? performance.now()) - piece.startedAt;
       const type = recorder.mimeType || piece.chunks[0]?.type;
-      const useful = duration >= 500 || piece.startedAt - session.startedAt >= 500;
+      const useful = piece.flush || duration >= 500 || piece.startedAt - session.startedAt >= 500;
       if (useful && type && piece.chunks.length) enqueue(new Blob(piece.chunks, { type }));
       else if (useful) setError('No audio was recorded in this part. Please try again, or type instead.');
       else if (!session.running) setNote('Recording was very short. Start the microphone and speak for a moment.');
@@ -161,7 +167,8 @@ export function useTeacherVoice(onTranscript: (text: string) => Promise<boolean>
       session.stream = stream;
       session.captureStartedAt = performance.now();
       if (!resuming) session.startedAt = session.captureStartedAt;
-      startPiece(session);
+      startPiece(session, resuming);
+      setStream(stream);
       setPhase('recording');
       session.ticker = window.setInterval(() => {
         if (alive.current) setElapsed(Math.min(300, Math.floor(captureTime(session) / 1000)));
@@ -233,5 +240,5 @@ export function useTeacherVoice(onTranscript: (text: string) => Promise<boolean>
     };
   }, []);
 
-  return { phase, elapsed, pending, processing, error, note, start, stop, pause, resume };
+  return { stream, phase, elapsed, pending, processing, error, note, start, stop, pause, resume };
 }

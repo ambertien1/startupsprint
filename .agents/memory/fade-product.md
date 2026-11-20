@@ -14,3 +14,9 @@ The user says, “Each person owns their own files. Don't edit the other person'
 **Why:** Two people edit the same application at once, so changing shared files risks overwriting the collaborator's work.
 
 **How to apply:** Confirm current ownership before expanding a future request beyond student-only files. Do not change shared files to simplify student-side integration.
+
+Teaching is continuous across Pause/Resume: a new spoken task extends the existing lesson steps unless the teacher clearly replaces or corrects them. Students share the assignment list but may need different next-step guidance.
+
+**Why:** The user reported that continuing to teach could drop new tasks and repeat step one even for students who had already completed it.
+
+**How to apply:** Preserve earlier assignments and their progress when extending a lesson. Treat each student's own work, rather than a class-wide completion flag, as the basis for their next instruction.

@@ -43,7 +43,11 @@ If you cannot tell what the student should do, do not guess: return an empty ste
 // marked what she said as a task: the agent listens and picks tasks out itself.
 const LISTENING = `
 
-Right now the teacher is teaching, and you are listening along. Most of what she says is explanation, stories, questions to the class, or classroom management. None of that is a step. Set has_task to true only when what she just said tells students to do something on their own screens ("add...", "now type...", "go ahead and make...", "I want you to..."). Then return the full updated step list as described above. When she is only explaining, set has_task to false, return the current steps unchanged with their ids, and leave question empty. Never ask a question while listening: if you are not sure it was a task, it was not.`;
+Right now the teacher is teaching, and you are listening along. Most of what she says is explanation, stories, questions to the class, or classroom management. None of that is a step. Set has_task to true only when what she just said tells students to do something on their own screens ("add...", "now type...", "go ahead and make...", "I want you to..."). Then return the full updated step list as described above.
+
+When the teacher gives a NEW task after existing steps, ADD its new steps AFTER the existing ones. Keep ALL existing steps, in their order and with their existing ids. Return the full combined list, not only the new task and not the old list unchanged. Only replace, remove, reorder or correct existing steps when the teacher clearly asks to replace or correct them. Pausing and resuming teaching does not start a new lesson or remove earlier steps.
+
+When she is only explaining, set has_task to false, return the current steps unchanged with their ids, and leave question empty. Never ask a question while listening: if you are not sure it was a task, it was not.`;
 
 // Built once at startup so a schema problem fails loudly instead of on first use.
 const OUTPUT_FORMAT = zodOutputFormat(StepsSchema);
@@ -115,7 +119,7 @@ const ACTION_START = /^(now |next |then |okay |ok |so |please |go ahead and |i w
  * hasTask is false only in listen mode when there was nothing to do.
  * @returns {Promise<{ steps: {id:string,text:string,done:boolean}[], question: string, hasTask: boolean, source: 'agent'|'fallback', ms: number, error?: string }>}
  */
-export async function makeSteps({ taskText, lesson = '', currentSteps = [], mode = 'task' }) {
+export async function makeSteps({ taskText, lesson = '', currentSteps = [], mode = 'task' }, dependencies = {}) {
   const listening = mode === 'listen';
   // Offline stand-in for listening: only sentences that start with an action count.
   const offline = () => {
@@ -125,11 +129,12 @@ export async function makeSteps({ taskText, lesson = '', currentSteps = [], mode
   };
   const started = Date.now();
   const done = (out) => ({ ...out, ms: Date.now() - started });
-  if (!hasCredentials()) {
+  if (!(dependencies.hasCredentials || hasCredentials)()) {
     return done({ ...offline(), question: '', source: 'fallback', error: 'ANTHROPIC_API_KEY is not set' });
   }
   try {
-    const response = await getClient().messages.parse({
+    const parse = dependencies.parse || ((request) => getClient().messages.parse(request));
+    const response = await parse({
       model: MODEL,
       max_tokens: 2000,
       output_config: { effort: 'low', format: OUTPUT_FORMAT },
@@ -143,6 +148,12 @@ export async function makeSteps({ taskText, lesson = '', currentSteps = [], mode
     if (listening && !hasTask) return done({ steps: currentSteps, question: '', hasTask: false, source: 'agent' });
     const merged = mergeSteps(steps, currentSteps);
     if (listening) {
+      const unchanged = merged.length === currentSteps.length
+        && merged.every((step, index) => step.id === currentSteps[index].id && step.text === currentSteps[index].text);
+      if (unchanged) return done({
+        ...offline(), question: '', source: 'fallback',
+        error: 'The steps agent detected a task but returned unchanged steps.',
+      });
       if (!merged.length) return done({ steps: currentSteps, question: '', hasTask: false, source: 'agent' });
       return done({ steps: merged, question: '', hasTask: true, source: 'agent' });
     }
