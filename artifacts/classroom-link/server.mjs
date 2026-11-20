@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { Server } from 'socket.io';
 import pino from 'pino';
 import { createClassroom } from './server/classroom.mjs';
+import { mountVoice } from './server/voice.mjs';
 
 const logger = pino();
 const root = path.dirname(fileURLToPath(import.meta.url));
@@ -24,7 +25,8 @@ const io = new Server(server, {
 });
 
 // Lesson transcript and steps (lesson:chunk, task:spoken, steps:new).
-createClassroom(io, logger);
+createClassroom(io, logger, { base });
+mountVoice(app, base);
 
 // Restarting clears all state.
 let sentence = { text: '', sentAt: null };

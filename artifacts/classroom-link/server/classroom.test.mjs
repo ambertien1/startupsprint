@@ -50,7 +50,8 @@ test('task:spoken from the teacher reaches a student as steps:new', async () => 
   delete process.env.ANTHROPIC_AUTH_TOKEN;
   const http = createServer();
   const io = new Server(http);
-  createClassroom(io, { info() {}, error() {} });
+  const spoken = [];
+  createClassroom(io, { info() {}, error() {} }, { speak: async (text) => { spoken.push(text); return '/audio/test.mp3'; } });
   await new Promise((r) => http.listen(0, r));
   const url = `http://localhost:${http.address().port}`;
   const teacher = connect(url);
@@ -58,6 +59,9 @@ test('task:spoken from the teacher reaches a student as steps:new', async () => 
   try {
     await Promise.all([teacher, student].map((s) => new Promise((r) => s.on('connect', r))));
     const got = new Promise((r) => student.on('steps:new', r));
+    const said = new Promise((r) => student.on('fade:say', r));
+    const joinAck = await student.emitWithAck('student:join', { studentId: 'maya', name: 'Maya' });
+    assert.equal(joinAck.ok, true);
     const lessonAck = await teacher.emitWithAck('lesson:chunk', { text: 'HTML uses tags like h1 for titles.' });
     assert.deepEqual(lessonAck, { ok: true, chunks: 1 });
     const taskAck = await teacher.emitWithAck('task:spoken', {
@@ -68,6 +72,13 @@ test('task:spoken from the teacher reaches a student as steps:new', async () => 
     assert.equal(taskAck.source, 'fallback');
     assert.equal(steps.length, 2);
     assert.deepEqual(Object.keys(steps[0]).sort(), ['done', 'id', 'text']);
+
+    // Fade says the first step to the student by name, with audio.
+    const say = await said;
+    assert.equal(say.text, 'Hi Maya! First, add a title to your page with an h1 tag.');
+    assert.equal(say.audioUrl, '/audio/test.mp3');
+    assert.equal(say.kind, 'step');
+    assert.deepEqual(spoken, [say.text]);
 
     // A student who joins late gets the current steps on connect.
     const late = connect(url);
@@ -83,5 +94,32 @@ test('task:spoken from the teacher reaches a student as steps:new', async () => 
     io.close();
     if (saved.key) process.env.ANTHROPIC_API_KEY = saved.key;
     if (saved.token) process.env.ANTHROPIC_AUTH_TOKEN = saved.token;
+  }
+});
+
+test('voice: no key means text only, and cached clips are served as mp3', async () => {
+  const { speak, mountVoice, hasVoice, _putClip } = await import('./voice.mjs');
+  const saved = { k: process.env.ELEVENLABS_API_KEY, v: process.env.ELEVENLABS_VOICE_ID };
+  delete process.env.ELEVENLABS_API_KEY;
+  delete process.env.ELEVENLABS_VOICE_ID;
+  try {
+    assert.equal(hasVoice(), false);
+    assert.equal(await speak('Hi Maya!'), null);
+    const { default: express } = await import('express');
+    const app = express();
+    mountVoice(app, '/');
+    _putClip('abc', Buffer.from('fake-mp3'));
+    const http = createServer(app);
+    await new Promise((r) => http.listen(0, r));
+    const base = `http://localhost:${http.address().port}`;
+    const ok = await fetch(`${base}/audio/abc.mp3`);
+    assert.equal(ok.status, 200);
+    assert.equal(ok.headers.get('content-type'), 'audio/mpeg');
+    assert.equal(await ok.text(), 'fake-mp3');
+    assert.equal((await fetch(`${base}/audio/nope.mp3`)).status, 404);
+    http.close();
+  } finally {
+    if (saved.k) process.env.ELEVENLABS_API_KEY = saved.k;
+    if (saved.v) process.env.ELEVENLABS_VOICE_ID = saved.v;
   }
 });
