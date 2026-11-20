@@ -37,7 +37,8 @@ ${JSON.stringify({
 }
 
 export function useFadeConversation(context: Context) {
-  const agentId = (import.meta.env.VITE_ELEVENLABS_AGENT_ID as string | undefined)?.trim();
+  // Public agent id (safe in the browser). A VITE_ELEVENLABS_AGENT_ID secret overrides it.
+  const agentId = (import.meta.env.VITE_ELEVENLABS_AGENT_ID as string | undefined)?.trim() || 'agent_3901m7xbc8h2fn7rp1xgfjk8j6yw';
   const [state, setState] = useState<VoiceState>('idle');
   const [transcripts, setTranscripts] = useState<Transcript[]>([]);
   const [fallback, setFallback] = useState(!agentId);

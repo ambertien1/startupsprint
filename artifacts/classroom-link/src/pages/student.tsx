@@ -1,13 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useStudentFade } from '../student/useStudentFade';
-import { useHoldToAsk } from '../student/useHoldToAsk';
+import { ConversationProvider } from '@elevenlabs/react';
+import { useFadeConversation } from '../student/useFadeConversation';
 import { buildPreview } from '../student/lesson';
 import { StudentCodeEditor } from '../student/StudentCodeEditor';
 import '../student/student-v2.css';
 
 const STATUS_LABEL = { connecting: 'Connecting', online: 'Connected', offline: 'Offline' } as const;
-const ASK_LABEL = { idle: 'Hold to ask a question', listening: 'Listening… let go when done', thinking: 'CoTeach is thinking…' } as const;
+const TALK_LABEL = { idle: 'Talk to CoTeach', connecting: 'Connecting to CoTeach…', listening: 'CoTeach is listening · tap to stop', speaking: 'CoTeach is talking · tap to stop' } as const;
 
 const I = {
   code: <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 7L3.5 12l5 5M15.5 7l5 5-5 5" /></svg>,
@@ -38,7 +39,16 @@ function FadeMark() {
 
 type Turn = { from: 'you' | 'fade'; text: string; kind?: string; lesson?: string | null; code?: string | null };
 
+// The ElevenLabs conversation hooks need this provider around the page.
 export default function Student() {
+  return (
+    <ConversationProvider>
+      <StudentWorkspace />
+    </ConversationProvider>
+  );
+}
+
+function StudentWorkspace() {
   const f = useStudentFade();
   const [question, setQuestion] = useState('');
   const [open, setOpen] = useState(true);
@@ -58,7 +68,18 @@ export default function Student() {
   const you = (text: string) => { setThread((t) => [...t, { from: 'you' as const, text }].slice(-8)); setWaiting(true); };
   const ask = (text: string) => { const sent = f.askQuestion(text); if (sent) you(text); return sent; };
   const hint = () => { f.requestHint(); you('Can I have a hint?'); };
-  const hold = useHoldToAsk(ask);
+  // Spoken questions go to the ElevenLabs agent, which answers in its own voice
+  // and sees the student's code, current step and the teacher's task.
+  const talk = useFadeConversation({
+    studentId: f.studentId, html: f.html, css: f.css,
+    step: f.steps[f.currentStepIndex] ?? null, taskText: f.taskText,
+  });
+  // While the agent is talking, CoTeach's other lines wait so voices never overlap.
+  const suppress = useRef(f.setVoiceSuppressed);
+  suppress.current = f.setVoiceSuppressed;
+  useLayoutEffect(() => { suppress.current(talk.connected); }, [talk.connected]);
+  // If the voice chat can't connect, open the typing box instead.
+  useEffect(() => { if (talk.fallback && talk.note) setTyping(true); }, [talk.fallback, talk.note]);
 
   useEffect(() => { document.title = 'My Website · CoTeach AI'; }, []);
   useEffect(() => {
@@ -76,7 +97,7 @@ export default function Student() {
     const timer = window.setTimeout(() => setWaiting(false), 15000);
     return () => window.clearTimeout(timer);
   }, [waiting, thread.length]);
-  useEffect(() => { threadEnd.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }, [thread.length, waiting]);
+  useEffect(() => { threadEnd.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }, [thread.length, waiting, talk.transcripts.length]);
 
   const srcDoc = useMemo(() => buildPreview(f.html, f.css), [f.html, f.css]);
   const m = guide;
@@ -95,7 +116,7 @@ export default function Student() {
     const t = question.trim();
     if (t && ask(t)) setQuestion('');
   };
-  const note = hold.note.startsWith('You asked') ? '' : hold.note;
+  const note = talk.note;
   const pct = f.steps.length ? Math.round((f.steps.filter((x) => x.done).length / f.steps.length) * 100) : 0;
   const doneCount = f.steps.filter((s) => s.done).length;
 
@@ -206,7 +227,7 @@ export default function Student() {
           </section>
 
           {/* 3. Questions and hints, as a conversation */}
-          {(thread.length > 0 || waiting) && (
+          {(thread.length > 0 || waiting || talk.transcripts.length > 0) && (
             <section className="sv-sec" aria-labelledby="sv-chat-h">
               <div className="sv-sec-head"><h2 id="sv-chat-h">Questions</h2></div>
               <ol className="sv-chat" aria-live="polite">
@@ -222,6 +243,12 @@ export default function Student() {
                     ) : null}
                   </li>
                 ))}
+                {talk.transcripts.slice(-6).map((t) => (
+                  <li key={t.id} className="sv-turn" data-from={t.source === 'student' ? 'you' : 'fade'}>
+                    <span className="sv-turn-who">{t.source === 'student' ? 'You said' : 'CoTeach'}</span>
+                    <p className="sv-bubble">{t.text.replace(/\[[^\]]*\]\s*/g, '')}</p>
+                  </li>
+                ))}
                 {waiting && <li className="sv-turn" data-from="fade"><span className="sv-turn-who">CoTeach</span><p className="sv-bubble sv-dots" aria-label="CoTeach is thinking"><i /><i /><i /></p></li>}
               </ol>
               <div ref={threadEnd} />
@@ -234,17 +261,13 @@ export default function Student() {
           <button
             type="button"
             className="sv-ask"
-            data-s={hold.phase}
-            disabled={hold.phase === 'thinking'}
-            onPointerDown={(e) => { e.currentTarget.setPointerCapture?.(e.pointerId); void hold.start(); }}
-            onPointerUp={hold.stop}
-            onPointerCancel={hold.stop}
-            onKeyDown={(e) => { if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) { e.preventDefault(); void hold.start(); } }}
-            onKeyUp={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); hold.stop(); } }}
+            data-s={talk.state === 'idle' ? 'idle' : 'listening'}
+            aria-pressed={talk.active}
+            onClick={() => { void talk.toggle(); }}
             data-testid="button-talk-to-fade"
           >
             <span className="sv-mic" aria-hidden="true">{I.mic}</span>
-            <span>{ASK_LABEL[hold.phase]}</span>
+            <span>{TALK_LABEL[talk.state]}</span>
           </button>
           <div className="sv-row">
             <button type="button" className="sv-link" onClick={hint} data-testid="button-hint">Give me a hint</button>
