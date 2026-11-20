@@ -1,4 +1,6 @@
-# Fade — project context for Claude Code
+# CoTeach AI — project context for Claude Code
+
+> **Name:** the product is **CoTeach AI**. "Fade" was the working name and still appears below and in code identifiers (for example the `fade:say` event and `useStudentFade`). Anything a user sees or hears says CoTeach AI, or "CoTeach" for the helper's voice.
 
 Read this before doing anything. It is the agreed plan for a 4-hour hackathon build (Berkeley Startup Sprint, Fri Nov 20 2026, build 12:00–4:00 PM, submit by 4:00).
 

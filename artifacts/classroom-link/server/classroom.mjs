@@ -22,7 +22,7 @@ export function createClassroom(io, logger, { speak = elevenSpeak, base = '/', a
   };
   const ack = (fn) => (typeof fn === 'function' ? fn : () => {});
 
-  // Fade says the student's current step aloud, by name. Text always goes out;
+  // CoTeach says the student's current step aloud, by name. Text always goes out;
   // audioUrl is null when voice isn't available.
   async function sayCurrentStep(socket, { greet }) {
     const student = state.students.get(socket.id);
@@ -73,10 +73,10 @@ export function createClassroom(io, logger, { speak = elevenSpeak, base = '/', a
     if (!w) return { ok: false, error: 'Unknown student.' };
     if (w.busy) {
       // A pause can be skipped, but a question or hint request waits its turn.
-      if (trigger === 'pause') return { ok: false, error: 'Fade is already thinking.' };
+      if (trigger === 'pause') return { ok: false, error: 'CoTeach is already thinking.' };
       const deadline = Date.now() + 10000;
       while (w.busy && Date.now() < deadline) await new Promise((r) => setTimeout(r, 150));
-      if (w.busy) return { ok: false, error: 'Fade is still thinking. Try again in a moment.' };
+      if (w.busy) return { ok: false, error: 'CoTeach is still thinking. Try again in a moment.' };
     }
     if (!state.steps.length && trigger !== 'question') return { ok: false, error: 'No steps yet.' };
     w.busy = true;
@@ -119,7 +119,7 @@ export function createClassroom(io, logger, { speak = elevenSpeak, base = '/', a
       return { ok: true, action: result.action };
     } catch (error) {
       logger.error({ err: error }, 'student agent failed');
-      return { ok: false, error: 'Fade could not help just now.' };
+      return { ok: false, error: 'CoTeach could not help just now.' };
     } finally {
       w.busy = false;
     }
@@ -143,7 +143,7 @@ export function createClassroom(io, logger, { speak = elevenSpeak, base = '/', a
     // A student who joins late still gets the current steps.
     if (state.steps.length) socket.emit('steps:new', { steps: state.steps });
 
-    // Student pages introduce themselves so Fade can use their name.
+    // Student pages introduce themselves so CoTeach can use their name.
     socket.on('student:join', (payload, acknowledge) => {
       const name = String(payload?.name || '').trim().slice(0, 40);
       const studentId = String(payload?.studentId || '').trim().slice(0, 40) || socket.id;

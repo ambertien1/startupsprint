@@ -27,7 +27,7 @@ export default function Teacher() {
 
   useEffect(() => {
     pageAlive.current = true;
-    document.title = 'Teacher · Fade';
+    document.title = 'Teacher · CoTeach AI';
     const socket = io({ path: `${import.meta.env.BASE_URL}socket.io` });
     socketRef.current = socket;
     const onConnect = () => setStatus('online');

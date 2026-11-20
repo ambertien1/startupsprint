@@ -5,7 +5,7 @@ type Phase = 'idle' | 'listening' | 'thinking';
 /**
  * Hold the button, ask out loud, let go. The audio goes to the server's
  * speech-to-text endpoint and the words are handed to onQuestion, which sends
- * them to Fade the same way a typed question is sent.
+ * them to CoTeach the same way a typed question is sent.
  */
 export function useHoldToAsk(onQuestion: (text: string) => boolean) {
   const [phase, setPhase] = useState<Phase>('idle');
@@ -48,11 +48,11 @@ export function useHoldToAsk(onQuestion: (text: string) => boolean) {
       const result = await response.json().catch(() => null);
       if (!alive.current) return;
       const text = typeof result?.text === 'string' ? result.text.trim() : '';
-      if (!response.ok || !result?.ok) setNote(result?.error || 'Fade could not hear that. You can type your question.');
-      else if (!text) setNote("Fade didn't hear any words. Try again, a little closer.");
+      if (!response.ok || !result?.ok) setNote(result?.error || 'CoTeach could not hear that. You can type your question.');
+      else if (!text) setNote("CoTeach didn't hear any words. Try again, a little closer.");
       else if (ask.current(text)) setNote(`You asked: "${text}"`);
     } catch {
-      if (alive.current) setNote('Fade could not hear that. You can type your question.');
+      if (alive.current) setNote('CoTeach could not hear that. You can type your question.');
     } finally {
       if (alive.current) setPhase('idle');
     }

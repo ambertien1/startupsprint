@@ -207,7 +207,7 @@ export function useStudentFade() {
       return;
     }
     socket.emit('hint:request', { studentId, stepIndex: stepsRef.current.findIndex((step) => !step.done) });
-    voice.setQuestionNote('Hint asked. Fade will help in a moment.');
+    voice.setQuestionNote('Hint asked. CoTeach will help in a moment.');
   }, [studentId, voice.setQuestionNote]);
   const askQuestion = useCallback((text: string) => {
     if (!text.trim()) return false;

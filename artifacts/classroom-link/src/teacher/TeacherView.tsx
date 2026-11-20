@@ -77,7 +77,7 @@ function StudentDetail({ student, online, pending, onHelp, total }: {
 
       {student.said && (
         <div data-testid="student-said" className="td-said">
-          <h4>What Fade told {student.name}</h4>
+          <h4>What CoTeach told {student.name}</h4>
           <p className="td-said-text">{student.said.text}</p>
           <div className="td-quotes">
             <div><h5>From their code</h5><blockquote className="mono">{student.said.code_quote || 'No code quote shared.'}</blockquote></div>
@@ -87,7 +87,7 @@ function StudentDetail({ student, online, pending, onHelp, total }: {
       )}
 
       <details data-testid="student-reasoning" className="td-reasoning">
-        <summary>How Fade decided</summary>
+        <summary>How CoTeach decided</summary>
         <div className="td-reasoning-body">
           {student.reasoning && (
             <dl className="td-meta">
@@ -236,7 +236,7 @@ export default function TeacherView(p: TeacherViewProps) {
   return (
     <div className="teacher-dashboard">
       <header className="td-top">
-        <div className="td-brand">Fade<span className="td-dot" aria-hidden="true" />
+        <div className="td-brand">CoTeach AI<span className="td-dot" aria-hidden="true" />
           <span className="td-sr">{status === 'online' ? 'Connected' : status === 'connecting' ? 'Connecting' : 'Offline'}</span>
         </div>
         <div role="tablist" aria-label="Teacher views" className="td-tabs">
@@ -274,7 +274,7 @@ export default function TeacherView(p: TeacherViewProps) {
                   <span className="td-chip-dot" aria-hidden="true" />{recording ? 'Live' : paused ? 'Paused' : 'Ready'}
                 </span>
                 <h1 className="td-h1">{recording ? 'Teaching in progress' : paused ? 'Paused' : 'Ready to teach'}</h1>
-                <p className="td-sub">Fade is listening, creating steps, and supporting your students in real time.</p>
+                <p className="td-sub">CoTeach is listening, creating steps, and supporting your students in real time.</p>
                 {(recording || paused) && (
                   <p className="td-timer"><span className={`td-rec ${recording ? 'on' : ''}`} aria-hidden="true" />
                     <span role="timer" aria-label="Recording time">{timer}</span>

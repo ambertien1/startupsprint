@@ -7,7 +7,7 @@ import { StudentCodeEditor } from '../student/StudentCodeEditor';
 import '../student/student-v2.css';
 
 const STATUS_LABEL = { connecting: 'Connecting', online: 'Connected', offline: 'Offline' } as const;
-const ASK_LABEL = { idle: 'Hold to ask a question', listening: 'Listening… let go when done', thinking: 'Fade is thinking…' } as const;
+const ASK_LABEL = { idle: 'Hold to ask a question', listening: 'Listening… let go when done', thinking: 'CoTeach is thinking…' } as const;
 
 const I = {
   code: <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 7L3.5 12l5 5M15.5 7l5 5-5 5" /></svg>,
@@ -60,7 +60,7 @@ export default function Student() {
   const hint = () => { f.requestHint(); you('Can I have a hint?'); };
   const hold = useHoldToAsk(ask);
 
-  useEffect(() => { document.title = 'My Website · Fade'; }, []);
+  useEffect(() => { document.title = 'My Website · CoTeach AI'; }, []);
   useEffect(() => {
     setOpen(true);
     const msg = f.message;
@@ -149,20 +149,20 @@ export default function Student() {
       </div>
 
       {/* Fade: the floating helper */}
-      <section className="sv-fade fs-pop" data-open={open} data-wide={wide} aria-label="Fade">
+      <section className="sv-fade fs-pop" data-open={open} data-wide={wide} aria-label="CoTeach AI">
         <header className="sv-fhead">
           <FadeMark />
-          <span className="sv-fname">Fade</span>
+          <span className="sv-fname">CoTeach AI</span>
           {f.steps.length > 0 && <span className="sv-count" aria-label={`${doneCount} of ${f.steps.length} steps done`}>{doneCount}/{f.steps.length}</span>}
-          <button type="button" className="sv-ghost" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-label={open ? 'Minimize Fade' : 'Open Fade'} data-testid="button-dismiss-fade">{I.minus}</button>
-          <button type="button" className="sv-ghost" onClick={() => { setWide((v) => !v); setOpen(true); }} aria-pressed={wide} aria-label={wide ? 'Make Fade smaller' : 'Make Fade larger'}>{I.popout}</button>
+          <button type="button" className="sv-ghost" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-label={open ? 'Minimize CoTeach' : 'Open CoTeach'} data-testid="button-dismiss-fade">{I.minus}</button>
+          <button type="button" className="sv-ghost" onClick={() => { setWide((v) => !v); setOpen(true); }} aria-pressed={wide} aria-label={wide ? 'Make CoTeach smaller' : 'Make CoTeach larger'}>{I.popout}</button>
         </header>
 
         <div className="sv-fbody" hidden={!open}>
           {/* Browsers only play sound after a click, so ask for one up front. */}
           {!f.soundOn && (
             <button type="button" className="sv-sound" onClick={f.unlockAudio} data-testid="button-sound-on">
-              Turn on Fade&rsquo;s voice
+              Turn on CoTeach&rsquo;s voice
             </button>
           )}
 
@@ -212,7 +212,7 @@ export default function Student() {
               <ol className="sv-chat" aria-live="polite">
                 {thread.map((t, i) => (
                   <li key={i} className="sv-turn" data-from={t.from}>
-                    <span className="sv-turn-who">{t.from === 'you' ? 'You' : t.kind === 'hint' ? 'Fade · hint' : 'Fade'}</span>
+                    <span className="sv-turn-who">{t.from === 'you' ? 'You' : t.kind === 'hint' ? 'CoTeach · hint' : 'CoTeach'}</span>
                     <p className="sv-bubble">{t.text}</p>
                     {t.from === 'fade' && (t.lesson || t.code) ? (
                       <div className="sv-quotes">
@@ -222,7 +222,7 @@ export default function Student() {
                     ) : null}
                   </li>
                 ))}
-                {waiting && <li className="sv-turn" data-from="fade"><span className="sv-turn-who">Fade</span><p className="sv-bubble sv-dots" aria-label="Fade is thinking"><i /><i /><i /></p></li>}
+                {waiting && <li className="sv-turn" data-from="fade"><span className="sv-turn-who">CoTeach</span><p className="sv-bubble sv-dots" aria-label="CoTeach is thinking"><i /><i /><i /></p></li>}
               </ol>
               <div ref={threadEnd} />
             </section>
