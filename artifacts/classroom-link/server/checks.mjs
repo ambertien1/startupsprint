@@ -78,3 +78,9 @@ export function currentStepIndex(steps, html, css = '') {
   const index = results.findIndex((r) => !r.pass);
   return index === -1 ? results.length : index;
 }
+
+/** True when the student has begun the current step but it does not pass yet (for example a tag left open). */
+export function stepStarted(steps, html, css = '') {
+  const open = runChecks(steps, html, css).find((r) => !r.pass);
+  return Boolean(open && open.checkable && !/^No /.test(open.detail));
+}

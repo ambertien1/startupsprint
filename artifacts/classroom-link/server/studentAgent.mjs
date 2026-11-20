@@ -23,7 +23,7 @@ How to help:
 - Give the smallest hint that lets the student take the next step themselves. Point at the place; do not give the finished code or the answer.
 - Everything you say about the subject must come from what the teacher said in the lesson. Use her words. If the lesson does not cover what the student needs, say the teacher has not covered that yet and set not_covered to true.
 - Use kind "cheer" only when every check passes. Use "answer" when replying to a question, "hint" otherwise.
-- If the student is working and does not need you, wait. A short pause is not a problem.
+- You watch the student's work the whole time. When they stop typing and the step is close but not right (a tag left open, a missing closing bracket, text in the wrong place), give one small nudge toward exactly that spot. If they have barely started or are clearly mid-thought, wait: you will get another look the next time they stop.
 - If the history shows the hints are used up and the student is still stuck, flag the teacher instead of hinting again. The reason you give is one plain sentence the teacher reads at a glance.
 
 Grounding, which the system checks: every speak_to_student carries code_quote, copied character for character from the student's code (the part you are talking about), and lesson_quote, copied character for character from the lesson transcript (the teacher's words your help rests on). If a quote does not match exactly, the call is rejected and you must try again with an exact copy. code_quote may be empty only when the student's code is empty; lesson_quote may be empty only when not_covered is true.`;
@@ -128,11 +128,13 @@ export async function runStudentAgent(ctx, { client } = {}) {
       ? `${ctx.name} asked out loud: "${ctx.question}"`
       : ctx.trigger === 'hint'
         ? `${ctx.name} pressed the Hint button.`
-        : `${ctx.name} has not typed for about ${Math.round(ctx.idleSeconds)} seconds.`;
+        : `${ctx.name} stopped typing about ${Math.round(ctx.idleSeconds)} seconds ago and their current step is not finished yet. You are watching their work as they go.`;
+  const firstOpen = runChecks(ctx.steps, ctx.html, ctx.css).find((c) => !c.pass);
+  const focus = firstOpen ? `\nTheir current step: "${firstOpen.text}". The live check says: ${firstOpen.detail}` : '';
   const earlier = (ctx.chat || []).length
     ? `\n\nYour conversation with ${ctx.name} so far:\n${ctx.chat.map((c) => `${c.who === 'student' ? ctx.name : 'You'}: ${c.text}`).join('\n')}`
     : '';
-  const messages = [{ role: 'user', content: `${wake}${earlier}\n\nDecide what helps ${ctx.name} most right now.` }];
+  const messages = [{ role: 'user', content: `${wake}${focus}${earlier}\n\nDecide what helps ${ctx.name} most right now.` }];
 
   // Each evidence tool returns data; each action is checked, then accepted or rejected.
   function handle(name, input) {

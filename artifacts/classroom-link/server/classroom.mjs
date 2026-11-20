@@ -3,9 +3,11 @@
 import { makeSteps } from './stepsAgent.mjs';
 import { speak as elevenSpeak } from './voice.mjs';
 import { runStudentAgent, MAX_HINTS } from './studentAgent.mjs';
-import { currentStepIndex } from './checks.mjs';
+import { currentStepIndex, stepStarted } from './checks.mjs';
 
 const MAX_TEXT = 4000;
+// How long a student can stop typing on an unfinished step before CoTeach AI takes a look.
+const WATCH_MS = Number(process.env.WATCH_MS) || 7000;
 
 export function createClassroom(io, logger, { speak = elevenSpeak, base = '/', agent = runStudentAgent, stepsAgent = makeSteps } = {}) {
   const state = {
@@ -79,6 +81,12 @@ export function createClassroom(io, logger, { speak = elevenSpeak, base = '/', a
       if (w.busy) return { ok: false, error: 'CoTeach AI is still thinking. Try again in a moment.' };
     }
     if (!state.steps.length && trigger !== 'question') return { ok: false, error: 'No steps yet.' };
+    if (trigger === 'pause') {
+      if (w.flagged) return { ok: false, error: 'The teacher is already on the way.' };
+      if (currentStepIndex(state.steps, w.html, w.css) >= state.steps.length) return { ok: false, error: 'All steps are done.' };
+      if (Date.now() - (w.lastLook || 0) < 5000) return { ok: false, error: 'Just looked.' };
+    }
+    w.lastLook = Date.now();
     w.busy = true;
     try {
       const result = await agent({
@@ -128,7 +136,25 @@ export function createClassroom(io, logger, { speak = elevenSpeak, base = '/', a
       return { ok: false, error: 'CoTeach AI could not help just now.' };
     } finally {
       w.busy = false;
+      // Still stuck part-way through a step? Look again soon, until it is right
+      // or the teacher has been called.
+      if (trigger !== 'question') armWatch(studentId, WATCH_MS + 5000, true);
     }
+  }
+
+  // Schedule the next look at a student's work. onlyIfStarted keeps CoTeach AI
+  // quiet for a student who simply has not begun typing yet.
+  function armWatch(studentId, ms = WATCH_MS, onlyIfStarted = false) {
+    const w = state.work.get(studentId);
+    if (!w) return;
+    clearTimeout(w.watch);
+    if (w.flagged || !state.steps.length) return;
+    if (currentStepIndex(state.steps, w.html, w.css) >= state.steps.length) return;
+    if (onlyIfStarted && !stepStarted(state.steps, w.html, w.css)) return;
+    w.watch = setTimeout(() => {
+      wakeAgent(studentId, 'pause').catch((err) => logger.error({ err }, 'watch failed'));
+    }, ms);
+    w.watch.unref?.();
   }
 
   const sayToAllStudents = () =>
@@ -143,6 +169,8 @@ export function createClassroom(io, logger, { speak = elevenSpeak, base = '/', a
     io.emit('steps:new', { steps: state.steps });
     for (const studentId of state.work.keys()) tellTeacher(studentId);
     void sayToAllStudents(); // Speech must not delay step delivery or the acknowledgement.
+    // Students who are already part-way through and stuck get watched from the start.
+    for (const id of state.work.keys()) armWatch(id, WATCH_MS + 5000, true);
   }
 
   io.on('connection', (socket) => {
@@ -188,6 +216,10 @@ export function createClassroom(io, logger, { speak = elevenSpeak, base = '/', a
           for (const sk of socketsFor(studentId)) sk.emit('fade:say', { text, audioUrl, kind, code_quote: '', lesson_quote: '' });
         }).catch((err) => logger.error({ err }, 'progress say failed'));
       }
+      // Keep watching: each time the student stops typing with the step still
+      // unfinished, CoTeach AI looks at the new code and decides what helps.
+      if (changed && !payload?.preset) armWatch(studentId, WATCH_MS);
+      else if (changed) armWatch(studentId, WATCH_MS + 5000, true); // a prepared, already-stuck page
       // preset: true loads a prepared starting point (demo) without counting as typing.
       if (changed && !payload?.preset) {
         w.lastTyped = Date.now();

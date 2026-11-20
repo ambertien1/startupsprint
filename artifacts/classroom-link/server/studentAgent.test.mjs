@@ -259,3 +259,35 @@ test('progress: color steps are checked, and finishing a step makes CoTeach AI g
     if (saved) process.env.ANTHROPIC_API_KEY = saved;
   }
 });
+
+test('watching: a student stuck part-way is looked at again without asking, until the teacher is called', async () => {
+  process.env.WATCH_MS = '1';
+  const { createClassroom: make } = await import(`./classroom.mjs?watch=${Date.now()}`);
+  const http = createServer();
+  const io = new Server(http);
+  const looks = [];
+  const decisions = [
+    { action: 'speak', kind: 'hint', text: 'Look at the end of your closing tag.', code_quote: '</h1', lesson_quote: 'like </h1>', log: [], ms: 1 },
+    { action: 'flag', reason: 'Leo is still missing the > on his closing tag.', log: [], ms: 1 },
+  ];
+  make(io, { info() {}, error() {}, warn() {} }, { speak: async () => null, agent: async (c) => { looks.push(c.trigger); return decisions.shift() ?? { action: 'wait', log: [], ms: 1 }; } });
+  await new Promise((r) => http.listen(0, r));
+  const url = `http://localhost:${http.address().port}`;
+  const teacher = connect(url);
+  const leo = connect(url);
+  const saved = process.env.ANTHROPIC_API_KEY; delete process.env.ANTHROPIC_API_KEY;
+  try {
+    await Promise.all([teacher, leo].map((s) => new Promise((r) => s.on('connect', r))));
+    await leo.emitWithAck('student:join', { studentId: 'leo', name: 'Leo' });
+    leo.emit('code:update', { studentId: 'leo', html: LEO, css: '', preset: true });
+    const flagged = new Promise((r) => teacher.on('student:update', (u) => { if (u.status === 'needs_help') r(u); }));
+    await teacher.emitWithAck('task:spoken', { text: 'Add a title to your page with an h1 tag, then add a paragraph under it.' });
+    const flag = await Promise.race([flagged, new Promise((_, no) => setTimeout(() => no(new Error('Leo was never flagged')), 15000))]);
+    assert.equal(flag.sentence, 'Leo needs you');
+    assert.deepEqual(looks, ['pause', 'pause']);
+  } finally {
+    teacher.close(); leo.close(); io.close();
+    delete process.env.WATCH_MS;
+    if (saved) process.env.ANTHROPIC_API_KEY = saved;
+  }
+});

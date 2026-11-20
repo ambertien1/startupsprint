@@ -25,9 +25,17 @@ h1 {
 }`;
 
 export function initialHtml(studentId: string): string {
-  // Students start with an empty file: the title is theirs to type.
+  // A ready page skeleton, with no title yet: adding it is the student's task.
   // Leo is the prepared "stuck" student for the demo.
-  return studentId === 'leo' ? "<h1>Leo's Page</h1" : '';
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+</head>
+<body>
+${studentId === 'leo' ? "  <h1>Leo's Page</h1" : '  '}
+</body>
+</html>`;
 }
 
 // Check the source too: HTML parsers repair unfinished closing tags, including

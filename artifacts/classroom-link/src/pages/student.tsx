@@ -8,7 +8,7 @@ import { StudentCodeEditor } from '../student/StudentCodeEditor';
 import '../student/student-v2.css';
 
 const STATUS_LABEL = { connecting: 'Connecting', online: 'Connected', offline: 'Offline' } as const;
-const TALK_LABEL = { idle: 'Talk to CoTeach AI', connecting: 'Connecting to CoTeach AI…', listening: 'CoTeach AI is listening · tap to stop', speaking: 'CoTeach AI is talking · tap to stop' } as const;
+const TALK_LABEL = { idle: 'Click to talk to CoTeach AI', connecting: 'Connecting to CoTeach AI…', listening: 'Listening · click to stop', speaking: 'CoTeach AI is talking · click to stop' } as const;
 
 const I = {
   code: <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 7L3.5 12l5 5M15.5 7l5 5-5 5" /></svg>,
