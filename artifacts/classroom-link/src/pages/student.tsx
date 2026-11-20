@@ -159,6 +159,13 @@ export default function Student() {
         </header>
 
         <div className="sv-fbody" hidden={!open}>
+          {/* Browsers only play sound after a click, so ask for one up front. */}
+          {!f.soundOn && (
+            <button type="button" className="sv-sound" onClick={f.unlockAudio} data-testid="button-sound-on">
+              Turn on Fade&rsquo;s voice
+            </button>
+          )}
+
           {/* 1. What to do now */}
           <div className="sv-say" aria-live="polite" aria-atomic="true">
             <button type="button" className="sv-orb" key={m.text} onClick={f.replay} aria-label="Say it again" title="Say it again" data-testid="button-say-again">

@@ -111,7 +111,20 @@ export function useStudentFade() {
         seen.add(entry.id);
         return true;
       });
+      const before = stepsRef.current.map((step) => step.text).join('\n');
       applyProgress(mergeSteps(stepsRef.current, incoming), announce);
+      // New steps from the teacher: read every step out, in order. The server
+      // then says the student's current step by name, which plays after this.
+      if (announce && incoming.length && incoming.map((step) => step.text).join('\n') !== before) {
+        const count = incoming.length === 1 ? 'one step' : `${incoming.length} steps`;
+        setMessage({
+          kind: 'steps',
+          text: `Your teacher gave you ${count}.`,
+          speechText: `Your teacher gave you ${count}. ${incoming
+            .map((step, index) => `Step ${index + 1}. ${step.text.replace(/[.!?\s]+$/, '')}.`)
+            .join(' ')}`,
+        });
+      }
       // Task announcements take priority over any progress cheer from the same event.
       updateTask(payload.task?.text, announce);
     };
@@ -211,7 +224,7 @@ export function useStudentFade() {
   return {
     name, studentId, html, css, setHtml, setCss, steps, currentStepIndex,
     message, status, askQuestion, requestHint, taskText, taskRevision, repeatTask,
-    replay: voice.replay, questionNote: voice.questionNote,
+    replay: voice.replay, soundOn: voice.soundOn, questionNote: voice.questionNote,
     setVoiceSuppressed: voice.setVoiceSuppressed,
     unlockAudio: voice.unlockAudio, questionInputRef: voice.questionInputRef,
   };
