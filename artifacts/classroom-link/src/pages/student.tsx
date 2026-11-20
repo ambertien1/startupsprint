@@ -197,6 +197,10 @@ function StudentWorkspace() {
             <div className="sv-say-text">
               <p className="sv-hi">{heading}</p>
               <p className="sv-msg" data-testid="text-fade-message">{body}</p>
+              <button type="button" className="sv-again" onClick={f.replay} data-testid="button-restate">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.6-5.9M4 4v5h5" /></svg>
+                Say it again
+              </button>
             </div>
           </div>
 
