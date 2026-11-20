@@ -1,0 +1,23 @@
+kind = "web"
+previewPath = "/"
+title = "Classroom Link"
+description = "A minimal real-time link between a teacher sending a sentence and students seeing it instantly, using React, Express and Socket.IO with in-memory state."
+version = "1.0.0"
+id = "artifacts/classroom-link"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/", "/socket.io" ]
+localPort = 20936
+
+[services.development]
+run = "pnpm --filter @workspace/classroom-link run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/classroom-link", "run", "build" ]
+run = "pnpm --filter @workspace/classroom-link run serve"
+
+[services.env]
+PORT = "20936"
+BASE_PATH = "/"
