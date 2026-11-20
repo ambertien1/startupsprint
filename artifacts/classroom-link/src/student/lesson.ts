@@ -1,11 +1,14 @@
 export type Step = { id: string; text: string; done: boolean };
 export type FadeMessage = {
   text: string;
+  speechText?: string;
   audioUrl?: string | null;
   kind?: string;
   code_quote?: string | null;
   lesson_quote?: string | null;
 };
+
+export const DEMO_TASK = 'Add a title to your page with an h1 tag, then add a paragraph under it.';
 
 export const DEMO_STEPS: Step[] = [
   { id: 's1', text: 'Type a title for your website in an h1 tag', done: false },
@@ -45,17 +48,44 @@ export function checkSteps(steps: Step[], html: string): Step[] {
   const source = /<body\b[^>]*>([\s\S]*?)(?:<\/body\s*>|$)/i.exec(clean)?.[1] ?? '';
   const nonempty = (markup: string) => {
     const doc = new DOMParser().parseFromString(markup, 'text/html');
-    return Boolean(doc.body.textContent?.replace(/\u00a0/g, ' ').trim());
+    return Boolean(doc.body.textContent?.replace(/ /g, ' ').trim());
   };
   const titles = [...source.matchAll(/<h1\b[^>]*>([\s\S]*?)<\/h1\s*>/gi)];
   const title = titles.find((match) => nonempty(match[1]));
   const afterTitle = title ? source.slice(title.index! + title[0].length) : '';
   const paragraph = [...afterTitle.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p\s*>/gi)]
     .some((match) => nonempty(match[1]));
+  // Steps written live by the teacher's steps agent have their own ids, so
+  // work out which tag a step is about from its words (same rule as the server).
+  const byText = (text: string) => {
+    const tag = tagForStep(text);
+    if (!tag) return false;
+    if (tag === 'img') return /<img\b[^>]*>/i.test(source);
+    return [...source.matchAll(new RegExp(`<${tag}\\b[^>]*>([\\s\\S]*?)</${tag}\\s*>`, 'gi'))]
+      .some((match) => nonempty(match[1]));
+  };
   return steps.map((step) => ({
     ...step,
-    done: step.done || (step.id === 's1' ? Boolean(title) : step.id === 's2' ? paragraph : false),
+    done: step.done || (step.id === 's1' ? Boolean(title) : step.id === 's2' ? paragraph : byText(step.text)),
   }));
+}
+
+const TAG_WORDS: [string, RegExp][] = [
+  ['p', /\bparagraph\b|<p>|\bp tag\b/i],
+  ['h2', /\bh2\b|\bsubheading\b|\bsubtitle\b/i],
+  ['img', /\bimg\b|\bimage\b|\bpicture\b/i],
+  ['a', /\blink\b|\banchor\b|<a>|\ba tag\b/i],
+  ['ul', /\bul\b|\bbulleted list\b|\bunordered list\b/i],
+  ['ol', /\bol\b|\bnumbered list\b|\bordered list\b/i],
+  ['li', /\bli\b|\blist item\b/i],
+  ['button', /\bbutton\b/i],
+  ['h1', /\btitle\b|\bmain heading\b|\bheading\b/i],
+];
+export function tagForStep(text: string): string | null {
+  const explicit = /\b(h[1-6]|img|button|ul|ol|li)\b/i.exec(text);
+  if (explicit) return explicit[1].toLowerCase();
+  for (const [tag, pattern] of TAG_WORDS) if (pattern.test(text)) return tag;
+  return null;
 }
 
 export function mergeSteps(previous: Step[], incoming: Step[]): Step[] {

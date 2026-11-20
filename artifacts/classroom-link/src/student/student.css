@@ -26,7 +26,12 @@
 .fade-student .fs-rail-i { width: 40px; height: 40px; display: grid; place-items: center; color: var(--dim); border-left: 2px solid transparent; }
 .fade-student .fs-rail-i[data-on='true'] { color: var(--ink); border-left-color: var(--accent); }
 
-.fade-student .fs-side { background: var(--panel); border-right: 1px solid var(--line); padding: 0.75rem 0.6rem; overflow: auto; }
+.fade-student .fs-side { background: var(--panel); border-right: 1px solid var(--line); padding: 0.75rem 0.6rem; min-height: 0; display: flex; flex-direction: column; }
+.fade-student .fs-task { flex: none; padding: 0.8rem; margin-bottom: 0.75rem; background: var(--cur); border: 1px solid var(--accent); border-radius: 8px; max-height: 60%; overflow: auto; overflow-wrap: anywhere; }
+.fade-student .fs-task h2 { margin: 0 0 0.5rem; font-size: 1rem; color: var(--accent); }
+.fade-student .fs-task p { margin: 0 0 0.8rem; font-size: 1.2rem; line-height: 1.5; white-space: pre-wrap; }
+.fade-student .fs-task .fs-btn { width: 100%; }
+.fade-student .fs-side-scroll { min-height: 0; overflow: auto; }
 .fade-student .fs-label { margin: 0.4rem 0.4rem 0.4rem; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); }
 .fade-student .fs-files { list-style: none; margin: 0 0 1.25rem; padding: 0; }
 .fade-student .fs-file { width: 100%; display: flex; align-items: center; gap: 0.55rem; padding: 0.4rem 0.5rem; border: 0; border-radius: 6px; background: none; cursor: pointer; text-align: left; font-family: var(--mono); font-size: 0.9rem; color: var(--soft); }
@@ -82,11 +87,12 @@
 .fade-student .fs-quote code { font-family: var(--mono); white-space: pre-wrap; word-break: break-word; color: var(--ink); }
 .fade-student .fs-convo { margin-top: 0.8rem; padding-top: 0.7rem; border-top: 1px solid var(--line); }
 .fade-student .fs-cstate { margin: 0 0 0.4rem; font-size: 0.9rem; font-weight: 700; color: var(--accent); }
-.fade-student .fs-trans { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.35rem; font-size: 1.05rem; }
+.fade-student .fs-trans { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.95rem; }
 .fade-student .fs-trans li { color: var(--soft); }
 .fade-student .fs-trans li[data-src='fade'] { color: var(--ink); }
 .fade-student .fs-who-l { font-weight: 700; margin-right: 0.45rem; color: var(--dim); }
-.fade-student .fs-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.9rem; }
+.fade-student .fs-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.9rem; }
+.fade-student .fs-actions .fs-btn { flex: 1 1 auto; }
 .fade-student .fs-btn { min-height: 2.75rem; padding: 0.5rem 0.9rem; border-radius: 8px; border: 1px solid #4a5566; background: var(--panel); font-weight: 700; cursor: pointer; transition: background-color 0.2s ease; }
 .fade-student .fs-btn:hover { background: var(--line); }
 .fade-student .fs-btn:disabled { opacity: 0.5; cursor: not-allowed; }
