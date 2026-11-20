@@ -28,14 +28,14 @@ export function createClassroom(io, logger, { speak = elevenSpeak, base = '/', a
     const student = state.students.get(socket.id);
     if (!student) return;
     const steps = state.steps;
-    const index = currentStepIndex(steps, state.work.get(student.studentId)?.html || '');
+    const index = currentStepIndex(steps, state.work.get(student.studentId)?.html || '', state.work.get(student.studentId)?.css || '');
     if (index >= steps.length) return;
     const step = steps[index];
     const body = `${step.text.charAt(0).toLowerCase()}${step.text.slice(1)}`;
     const text = greet && index === 0 ? `Hi ${student.name}! First, ${body}` : `${student.name}, next, ${body}`;
     const audioUrl = await speak(text, { base, logger });
     // A newer task or code edit can arrive while the audio is generated.
-    if (state.steps !== steps || currentStepIndex(steps, state.work.get(student.studentId)?.html || '') !== index) return;
+    if (state.steps !== steps || currentStepIndex(steps, state.work.get(student.studentId)?.html || '', state.work.get(student.studentId)?.css || '') !== index) return;
     socket.emit('fade:say', { text, audioUrl, kind: 'step', code_quote: '', lesson_quote: '' });
   }
   const workFor = (studentId, name) => {
@@ -53,7 +53,7 @@ export function createClassroom(io, logger, { speak = elevenSpeak, base = '/', a
   function tellTeacher(studentId, extra = {}) {
     const w = state.work.get(studentId);
     if (!w) return;
-    const stepIndex = currentStepIndex(state.steps, w.html);
+    const stepIndex = currentStepIndex(state.steps, w.html, w.css);
     const total = state.steps.length;
     const status = w.flagged ? 'needs_help' : total && stepIndex >= total ? 'done' : 'working';
     const sentence =
@@ -88,12 +88,18 @@ export function createClassroom(io, logger, { speak = elevenSpeak, base = '/', a
         steps: state.steps.map(({ id, text }) => ({ id, text })),
         lesson: state.lesson.join('\n'),
         hints: w.hints,
+        chat: (w.chat ||= []).slice(-6),
         idleSeconds: (Date.now() - w.lastTyped) / 1000,
         trigger,
         question,
       });
       logger.info({ studentId, trigger, action: result.action, ms: result.ms, calls: result.log.length, error: result.error }, 'student agent');
       const reasoning = { trigger, action: result.action, ms: result.ms, log: result.log };
+      // Remember the exchange so follow-up questions make sense.
+      if (question) w.chat.push({ who: 'student', text: question });
+      else if (trigger === 'hint') w.chat.push({ who: 'student', text: '(asked for a hint)' });
+      if (result.text) w.chat.push({ who: 'coteach', text: result.text });
+      w.chat = w.chat.slice(-8);
       if (result.action === 'speak' || result.action === 'fallback') {
         if (result.kind === 'hint') w.hints.push(result.text);
         const audioUrl = await speak(result.text, { base, logger });
@@ -164,8 +170,24 @@ export function createClassroom(io, logger, { speak = elevenSpeak, base = '/', a
       const html = String(payload?.html ?? '').slice(0, 20000);
       const css = String(payload?.css ?? '').slice(0, 20000);
       const changed = html !== w.html || css !== w.css;
+      const before = currentStepIndex(state.steps, w.html, w.css);
       w.html = html;
       w.css = css;
+      // CoTeach AI follows along: when a step is finished, say so and give the next one.
+      const after = currentStepIndex(state.steps, html, css);
+      if (changed && !payload?.preset && state.steps.length && after > before) {
+        const total = state.steps.length;
+        const next = state.steps[after];
+        const text = after >= total
+          ? `You did it, ${w.name}! You finished every step.`
+          : `Nice work, ${w.name}! Step ${after} is done. Next, ${next.text.charAt(0).toLowerCase()}${next.text.slice(1)}`;
+        const kind = after >= total ? 'cheer' : 'step';
+        const stepsNow = state.steps;
+        speak(text, { base, logger }).then((audioUrl) => {
+          if (state.steps !== stepsNow || currentStepIndex(stepsNow, w.html, w.css) !== after) return;
+          for (const sk of socketsFor(studentId)) sk.emit('fade:say', { text, audioUrl, kind, code_quote: '', lesson_quote: '' });
+        }).catch((err) => logger.error({ err }, 'progress say failed'));
+      }
       // preset: true loads a prepared starting point (demo) without counting as typing.
       if (changed && !payload?.preset) {
         w.lastTyped = Date.now();

@@ -37,7 +37,7 @@ export function useStudentFade() {
   const currentStepIndex = steps.findIndex((step) => !step.done);
 
   const applyProgress = useCallback((base: Step[], announce = true) => {
-    const checked = checkSteps(base, codeRef.current.html);
+    const checked = checkSteps(base, codeRef.current.html, codeRef.current.css);
     const newlyDone = checked.filter((step, index) => step.done && !base[index].done);
     stepsRef.current = checked;
     setSteps(checked);
@@ -164,7 +164,7 @@ export function useStudentFade() {
     };
   }, [applyProgress, studentId, name]);
 
-  useEffect(() => { applyProgress(stepsRef.current); }, [html, applyProgress]);
+  useEffect(() => { applyProgress(stepsRef.current); }, [html, css, applyProgress]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {

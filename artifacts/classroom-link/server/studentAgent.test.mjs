@@ -225,3 +225,37 @@ test('a question is always answered: no flag, no hint budget, even when hints ar
   assert.equal(out.kind, 'answer');
   assert.match(out.log.find((l) => !l.ok).result, /Answer it first/);
 });
+
+test('progress: color steps are checked, and finishing a step makes CoTeach AI give the next one', async () => {
+  const three = [...STEPS, { id: 's3', text: 'Change the text color to purple.' }];
+  assert.equal(currentStepIndex(three, '<h1>Hi</h1><p>Yo</p>', 'h1 { color: blue; }'), 2);
+  assert.equal(currentStepIndex(three, '<h1>Hi</h1><p>Yo</p>', 'h1 { color: purple; }'), 3);
+
+  const http = createServer();
+  const io = new Server(http);
+  createClassroom(io, { info() {}, error() {}, warn() {} }, { speak: async () => null, agent: async () => ({ action: 'wait', log: [], ms: 1 }) });
+  await new Promise((r) => http.listen(0, r));
+  const url = `http://localhost:${http.address().port}`;
+  const teacher = connect(url);
+  const maya = connect(url);
+  const saved = process.env.ANTHROPIC_API_KEY; delete process.env.ANTHROPIC_API_KEY;
+  try {
+    await Promise.all([teacher, maya].map((s) => new Promise((r) => s.on('connect', r))));
+    await teacher.emitWithAck('task:spoken', { text: 'Add a title to your page with an h1 tag, then add a paragraph under it.' });
+    await maya.emitWithAck('student:join', { studentId: 'maya', name: 'Maya' });
+    const says = [];
+    maya.on('fade:say', (p) => says.push(p));
+    const wait = (n) => new Promise((r) => { const t = setInterval(() => { if (says.length >= n) { clearInterval(t); r(); } }, 20); });
+    maya.emit('code:update', { studentId: 'maya', html: '<h1>My Website</h1>', css: '' });
+    await wait(1);
+    assert.match(says.at(-1).text, /^Nice work, Maya! Step 1 is done\. Next, add a paragraph/);
+    assert.equal(says.at(-1).kind, 'step');
+    maya.emit('code:update', { studentId: 'maya', html: '<h1>My Website</h1><p>Hello</p>', css: '' });
+    await wait(2);
+    assert.equal(says.at(-1).text, 'You did it, Maya! You finished every step.');
+    assert.equal(says.at(-1).kind, 'cheer');
+  } finally {
+    teacher.close(); maya.close(); io.close();
+    if (saved) process.env.ANTHROPIC_API_KEY = saved;
+  }
+});

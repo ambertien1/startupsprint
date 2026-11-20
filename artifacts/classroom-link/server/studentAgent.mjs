@@ -14,6 +14,10 @@ const SYSTEM = `You are CoTeach AI, a patient voice that helps one student durin
 
 You were woken because the student paused, asked for a hint, or asked a question. Decide what helps most right now. You have three evidence tools (get_student_code, run_checks, get_history) and three actions that end your turn (speak_to_student, flag_teacher, wait). Always read the student's code before you act; look at the checks and history when they would change your decision.
 
+Be quick: call every evidence tool you need together in your first turn, then act in your second.
+
+When the student asks a question, talk with them like a kind person would: answer the exact thing they asked first, in plain spoken words, and build on what you already said to them instead of repeating it. If they ask you to repeat or explain again, say it a different, simpler way.
+
 How to help:
 - Name what is already working before anything else. Never say "wrong", "mistake", "error" or "incorrect".
 - Give the smallest hint that lets the student take the next step themselves. Point at the place; do not give the finished code or the answer.
@@ -111,7 +115,7 @@ export async function runStudentAgent(ctx, { client } = {}) {
   const note = (tool, input, result, ok = true) => log.push({ t: Date.now() - started, tool, input, result, ok });
   const finish = (out) => ({ ...out, log, ms: Date.now() - started });
   const hintsLeft = Math.max(0, MAX_HINTS - ctx.hints.length);
-  const checks = () => runChecks(ctx.steps, ctx.html);
+  const checks = () => runChecks(ctx.steps, ctx.html, ctx.css);
   let readCode = false;
 
   if (!client && !(process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN)) {
@@ -125,7 +129,10 @@ export async function runStudentAgent(ctx, { client } = {}) {
       : ctx.trigger === 'hint'
         ? `${ctx.name} pressed the Hint button.`
         : `${ctx.name} has not typed for about ${Math.round(ctx.idleSeconds)} seconds.`;
-  const messages = [{ role: 'user', content: `${wake}\nDecide what helps ${ctx.name} most right now.` }];
+  const earlier = (ctx.chat || []).length
+    ? `\n\nYour conversation with ${ctx.name} so far:\n${ctx.chat.map((c) => `${c.who === 'student' ? ctx.name : 'You'}: ${c.text}`).join('\n')}`
+    : '';
+  const messages = [{ role: 'user', content: `${wake}${earlier}\n\nDecide what helps ${ctx.name} most right now.` }];
 
   // Each evidence tool returns data; each action is checked, then accepted or rejected.
   function handle(name, input) {

@@ -39,13 +39,16 @@ ${studentId === 'leo' ? "  <h1>Leo's Page</h1" : '  '}
 
 // Check the source too: HTML parsers repair unfinished closing tags, including
 // Leo's deliberately unfinished </h1. A repaired tag must not complete a step.
-export function checkSteps(steps: Step[], html: string): Step[] {
+export function checkSteps(steps: Step[], html: string, css = ''): Step[] {
   const clean = html
     .replace(/<!--[\s\S]*?(?:-->|$)/g, '')
     .replace(/<(script|style|textarea)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, '');
   // Evaluate only authored body content, never title/head content. Keep the
   // source rather than repaired DOM so an unfinished closing tag stays pending.
-  const source = /<body\b[^>]*>([\s\S]*?)(?:<\/body\s*>|$)/i.exec(clean)?.[1] ?? '';
+  // A student may clear the template and type just their tags: with no <body>,
+  // check everything they wrote.
+  const source = /<body\b[^>]*>([\s\S]*?)(?:<\/body\s*>|$)/i.exec(clean)?.[1]
+    ?? clean.replace(/<title\b[^>]*>[\s\S]*?<\/title\s*>/gi, '');
   const nonempty = (markup: string) => {
     const doc = new DOMParser().parseFromString(markup, 'text/html');
     return Boolean(doc.body.textContent?.replace(/ /g, ' ').trim());
@@ -58,6 +61,10 @@ export function checkSteps(steps: Step[], html: string): Step[] {
   // Steps written live by the teacher's steps agent have their own ids, so
   // work out which tag a step is about from its words (same rule as the server).
   const byText = (text: string) => {
+    if (/\bcolou?r\b/i.test(text)) {
+      const color = /\b(red|orange|yellow|green|blue|purple|violet|pink|black|white|gr[ae]y|brown|teal|navy|gold)\b/i.exec(text)?.[1];
+      if (color) return new RegExp(`color\\s*:\\s*${color}\\b`, 'i').test(`${css}\n${html}`);
+    }
     const tag = tagForStep(text);
     if (!tag) return false;
     if (tag === 'img') return /<img\b[^>]*>/i.test(source);

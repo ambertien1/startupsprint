@@ -175,7 +175,9 @@ test('a code change while voice is being generated cannot announce an already co
   const teacher = connect(url);
   const student = connect(url);
   let announcements = 0;
-  student.on('fade:say', () => { announcements += 1; });
+  // The stale "First, …" line for the finished step must not arrive. The newer
+  // progress line ("You did it…") is expected and is not counted here.
+  student.on('fade:say', (say) => { if (/\bFirst,/.test(say?.text || '')) announcements += 1; });
   try {
     await Promise.all([teacher, student].map(socket => new Promise(resolve => socket.on('connect', resolve))));
     await student.emitWithAck('student:join', { studentId: 'maya', name: 'Maya' });

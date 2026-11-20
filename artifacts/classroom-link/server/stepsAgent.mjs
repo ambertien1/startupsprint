@@ -4,7 +4,8 @@ import Anthropic from '@anthropic-ai/sdk';
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
 import { z } from 'zod/v4'; // the SDK's helper needs the v4 entry point
 
-const MODEL = process.env.STEPS_MODEL || 'claude-opus-5-5';
+// Fast model by default so steps reach students in about two seconds; STEPS_MODEL overrides.
+const MODEL = process.env.STEPS_MODEL || 'claude-haiku-5-5';
 const TIMEOUT_MS = Number(process.env.STEPS_TIMEOUT_MS) || 8000;
 
 const StepsSchema = z.object({

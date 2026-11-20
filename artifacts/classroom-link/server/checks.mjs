@@ -49,8 +49,23 @@ export function checkTag(html, tag) {
  * @param {{id:string,text:string}[]} steps
  * @returns {{ id:string, text:string, pass:boolean, detail:string }[]}
  */
-export function runChecks(steps, html) {
+const COLORS = /\b(red|orange|yellow|green|blue|purple|violet|pink|black|white|gr[ae]y|brown|teal|navy|gold)\b/i;
+
+/** A step like "Change the text color to purple": is that color used in the CSS or a style attribute? */
+export function checkColor(stepText, html, css) {
+  if (!/\bcolou?r\b/i.test(stepText)) return null;
+  const color = COLORS.exec(stepText)?.[1]?.toLowerCase();
+  if (!color) return null;
+  const used = new RegExp(`color\\s*:\\s*${color}\\b`, 'i').test(`${css || ''}\n${html || ''}`);
+  return used
+    ? { pass: true, detail: `The color ${color} is set.` }
+    : { pass: false, detail: `No color: ${color} in the CSS yet.` };
+}
+
+export function runChecks(steps, html, css = '') {
   return steps.map((step) => {
+    const color = checkColor(step.text, html, css);
+    if (color) return { id: step.id, text: step.text, ...color, checkable: true };
     const tag = tagForStep(step.text);
     if (!tag) return { id: step.id, text: step.text, pass: false, detail: 'No automatic check for this step.', checkable: false };
     return { id: step.id, text: step.text, ...checkTag(html, tag), checkable: true };
@@ -58,8 +73,8 @@ export function runChecks(steps, html) {
 }
 
 /** Index of the first step that doesn't pass yet; steps.length when all pass. */
-export function currentStepIndex(steps, html) {
-  const results = runChecks(steps, html);
+export function currentStepIndex(steps, html, css = '') {
+  const results = runChecks(steps, html, css);
   const index = results.findIndex((r) => !r.pass);
   return index === -1 ? results.length : index;
 }
