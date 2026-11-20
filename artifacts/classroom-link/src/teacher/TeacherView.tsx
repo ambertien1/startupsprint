@@ -304,7 +304,8 @@ export default function TeacherView(p: TeacherViewProps) {
                 <p className="td-sub">Fade is listening, creating steps, and supporting your students in real time.</p>
                 {(recording || paused) && (
                   <p className="td-timer"><span className={`td-rec ${recording ? 'on' : ''}`} aria-hidden="true" />
-                    <span role="timer" aria-label="Recording time">{timer}</span></p>
+                    <span role="timer" aria-label="Recording time">{timer}</span>
+                    {recording && <span className="td-bars" aria-hidden="true"><i /><i /><i /><i /><i /></span>}</p>
                 )}
                 <div className="td-controls">
                   <button type="button" data-testid="voice-teach" disabled={blocked} aria-pressed={active}
