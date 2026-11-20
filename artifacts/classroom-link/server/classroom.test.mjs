@@ -123,3 +123,37 @@ test('voice: no key means text only, and cached clips are served as mp3', async 
     if (saved.v) process.env.ELEVENLABS_VOICE_ID = saved.v;
   }
 });
+
+test('stt: audio in, words out; clear errors for no key and no audio', async () => {
+  const { mountStt } = await import('./stt.mjs');
+  const { default: express } = await import('express');
+  const saved = process.env.ELEVENLABS_API_KEY;
+  const app = express();
+  let sent = null;
+  mountStt(app, '/', null, {
+    fetchImpl: async (url, init) => {
+      sent = { url, key: init.headers['xi-api-key'], model: init.body.get('model_id'), file: init.body.get('file') };
+      return new Response(JSON.stringify({ text: ' Add a title with an h1 tag. ' }), { status: 200 });
+    },
+  });
+  const http = createServer(app);
+  await new Promise((r) => http.listen(0, r));
+  const url = `http://localhost:${http.address().port}/stt`;
+  const audio = Buffer.alloc(1000, 1);
+  const post = (body) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'audio/webm;codecs=opus' }, body });
+  try {
+    delete process.env.ELEVENLABS_API_KEY;
+    assert.equal((await post(audio)).status, 503);
+    process.env.ELEVENLABS_API_KEY = 'test-key';
+    assert.equal((await post(Buffer.alloc(10))).status, 400);
+    const ok = await post(audio);
+    assert.deepEqual(await ok.json(), { ok: true, text: 'Add a title with an h1 tag.' });
+    assert.equal(sent.key, 'test-key');
+    assert.equal(sent.model, 'scribe_v1');
+    assert.equal(sent.file.size, 1000);
+    assert.equal(sent.file.name, 'speech.webm');
+  } finally {
+    http.close();
+    if (saved) process.env.ELEVENLABS_API_KEY = saved; else delete process.env.ELEVENLABS_API_KEY;
+  }
+});
