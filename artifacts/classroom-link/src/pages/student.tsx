@@ -81,7 +81,8 @@ function StudentWorkspace() {
   const [demoCss, setDemoCss] = useState(DEMO_CSS);
   const [demoThread, setDemoThread] = useState<Turn[]>(DEMO_THREAD);
   const demoSteps = useMemo(() => checkSteps(DEMO_STEPS, demoHtml, demoCss), [demoHtml, demoCss]);
-  const toggleDemo = () => { setDemoHtml(DEMO_HTML); setDemoCss(DEMO_CSS); setDemoThread(DEMO_THREAD); setDemo((on) => !on); };
+  const toggleDemo = () => { setDemoHtml(DEMO_HTML); setDemoCss(DEMO_CSS); setDemoThread(DEMO_THREAD); demoFlip.current(); setDemo((on) => !on); };
+  const demoFlip = useRef<() => void>(() => {});
   const f = demo ? {
     ...live, name: 'Maya', status: 'online' as const, html: demoHtml, css: demoCss,
     setHtml: setDemoHtml, setCss: setDemoCss, steps: demoSteps,
@@ -152,11 +153,16 @@ function StudentWorkspace() {
     const box = chatBox.current;
     if (box) box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
   }, [chatCount, waiting, view]);
+  demoFlip.current = () => { skipSwitch.current = true; setView('steps'); };
+  const seenCount = useRef(chatCount);
+  const skipSwitch = useRef(false);
   useEffect(() => {
-    if (!chatCount) return;
-    // A new message opens the conversation; it never interrupts silently.
-    setView('chat');
-    if (viewRef.current !== 'chat') setUnread(false);
+    // A new message opens the conversation. Loading the demo's sample
+    // conversation does not: the demo starts on the steps.
+    const grew = chatCount > seenCount.current;
+    seenCount.current = chatCount;
+    if (skipSwitch.current) { skipSwitch.current = false; return; }
+    if (grew) { setView('chat'); setUnread(false); }
   }, [chatCount]);
   useEffect(() => { if (talk.active) setView('chat'); }, [talk.active]);
 
