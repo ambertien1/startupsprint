@@ -222,6 +222,17 @@
 @keyframes sv-fadein { from { opacity: 0; } }
 @media (max-width: 760px) { .sv-fade { height: auto; } .sv-chatbox { max-height: 22rem; } }
 
+.sv-demo { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px 6px 8px; border-radius: 999px; font-weight: 700; font-size: .85rem; color: var(--ink); background: #fff; border: 1px solid var(--hair); box-shadow: var(--e1); }
+.sv-demo-track { width: 30px; height: 18px; border-radius: 999px; background: #d9d2c4; position: relative; transition: background .25s; }
+.sv-demo-track span { position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / .25); transition: transform .25s var(--ease); }
+.sv-demo[aria-checked='true'] { color: #5b4a9b; border-color: rgb(91 74 155 / .35); }
+.sv-demo[aria-checked='true'] .sv-demo-track { background: #7c68c9; }
+.sv-demo[aria-checked='true'] .sv-demo-track span { transform: translateX(12px); }
+
+.sv-demo { margin-left: auto; }
+.sv-demo + .sv-who { margin-left: 0; }
+.sv-count.sv-count-demo { background: #ece6fb; color: #5b4a9b; white-space: nowrap; }
+
 @keyframes sv-pop { from { opacity: 0; transform: translateY(-10px) scale(.97); } }
 @keyframes sv-in { from { opacity: 0; transform: translateY(8px); } }
 @keyframes sv-eq { 0%, 100% { transform: scaleY(.45); } 50% { transform: scaleY(1); } }

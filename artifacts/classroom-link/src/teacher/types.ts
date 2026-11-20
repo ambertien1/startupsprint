@@ -42,6 +42,8 @@ export type TeacherVoice = {
   resume: () => Promise<void>;
 };
 export type TeacherViewProps = {
+  demo?: boolean;
+  onToggleDemo?: () => void;
   status: Status;
   lesson: string;
   setLesson: (text: string) => void;

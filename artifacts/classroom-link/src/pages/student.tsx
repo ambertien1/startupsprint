@@ -3,7 +3,7 @@ import type { FormEvent } from 'react';
 import { useStudentFade } from '../student/useStudentFade';
 import { ConversationProvider } from '@elevenlabs/react';
 import { useFadeConversation } from '../student/useFadeConversation';
-import { buildPreview } from '../student/lesson';
+import { buildPreview, checkSteps } from '../student/lesson';
 import { StudentCodeEditor } from '../student/StudentCodeEditor';
 import '../student/student-v2.css';
 
@@ -37,6 +37,30 @@ function FadeMark() {
   );
 }
 
+const DEMO_STEPS = [
+  { id: 'd1', text: 'Add a title to your page with an h1 tag.', done: false },
+  { id: 'd2', text: 'Add a paragraph under your title.', done: false },
+  { id: 'd3', text: 'Change the text color to purple.', done: false },
+];
+const DEMO_HTML = `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+</head>
+<body>
+  <h1>My Website</h1>
+  
+</body>
+</html>`;
+const DEMO_CSS = `body {
+  font-family: sans-serif;
+  padding: 24px;
+}`;
+const DEMO_THREAD: Turn[] = [
+  { from: 'you', text: "What's a paragraph tag?" },
+  { from: 'fade', kind: 'answer', text: 'Good question, Maya. A paragraph goes inside a p tag, and it needs a closing tag too. Try it right under your title.', lesson: 'A paragraph goes inside a p tag.', code: '<h1>My Website</h1>' },
+];
+
 type Turn = { from: 'you' | 'fade'; text: string; kind?: string; lesson?: string | null; code?: string | null };
 
 // The ElevenLabs conversation hooks need this provider around the page.
@@ -49,7 +73,20 @@ export default function Student() {
 }
 
 function StudentWorkspace() {
-  const f = useStudentFade();
+  const live = useStudentFade();
+  // Demo switch: an example lesson with sample steps and a sample conversation,
+  // so anyone can see the whole product. It works locally and touches nothing live.
+  const [demo, setDemo] = useState(() => new URLSearchParams(window.location.search).has('demo'));
+  const [demoHtml, setDemoHtml] = useState(DEMO_HTML);
+  const [demoCss, setDemoCss] = useState(DEMO_CSS);
+  const [demoThread, setDemoThread] = useState<Turn[]>(DEMO_THREAD);
+  const demoSteps = useMemo(() => checkSteps(DEMO_STEPS, demoHtml, demoCss), [demoHtml, demoCss]);
+  const toggleDemo = () => { setDemoHtml(DEMO_HTML); setDemoCss(DEMO_CSS); setDemoThread(DEMO_THREAD); setDemo((on) => !on); };
+  const f = demo ? {
+    ...live, name: 'Maya', status: 'online' as const, html: demoHtml, css: demoCss,
+    setHtml: setDemoHtml, setCss: setDemoCss, steps: demoSteps,
+    currentStepIndex: demoSteps.findIndex((step) => !step.done),
+  } : live;
   const [question, setQuestion] = useState('');
   const [open, setOpen] = useState(true);
   const [wide, setWide] = useState(false);
@@ -72,8 +109,13 @@ function StudentWorkspace() {
   const viewRef = useRef(view);
   viewRef.current = view;
   const you = (text: string) => { setThread((t) => [...t, { from: 'you' as const, text }].slice(-8)); setWaiting(true); };
-  const ask = (text: string) => { const sent = f.askQuestion(text); if (sent) you(text); return sent; };
-  const hint = () => { f.requestHint(); you('Can I have a hint?'); };
+  const demoReply = (asked: string) => {
+    setDemoThread((t) => [...t, { from: 'you' as const, text: asked }]);
+    window.setTimeout(() => setDemoThread((t) => [...t, { from: 'fade' as const, kind: 'answer', text: 'In the live product I answer from what your teacher said, and point at the exact spot in your code. Switch Demo off to try it for real.' }]), 900);
+    return true;
+  };
+  const ask = (text: string) => { if (demo) return demoReply(text); const sent = f.askQuestion(text); if (sent) you(text); return sent; };
+  const hint = () => { if (demo) { demoReply('Can I have a hint?'); return; } f.requestHint(); you('Can I have a hint?'); };
   // Spoken questions go to the ElevenLabs agent, which answers in its own voice
   // and sees the student's code, current step and the teacher's task.
   const talk = useFadeConversation({
@@ -103,7 +145,8 @@ function StudentWorkspace() {
     const timer = window.setTimeout(() => setWaiting(false), 15000);
     return () => window.clearTimeout(timer);
   }, [waiting, thread.length]);
-  const chatCount = thread.length + talk.transcripts.length;
+  const shownThread = demo ? demoThread : thread;
+  const chatCount = shownThread.length + (demo ? 0 : talk.transcripts.length);
   useEffect(() => {
     // Keep the newest message in view without moving the rest of the page.
     const box = chatBox.current;
@@ -120,7 +163,13 @@ function StudentWorkspace() {
   const srcDoc = useMemo(() => buildPreview(f.html, f.css), [f.html, f.css]);
   // A <title> tag names the browser tab, so show it on the preview's tab.
   const pageTitle = /<title\b[^>]*>([^<]*)/i.exec(f.html)?.[1]?.trim() || '';
-  const m = guide;
+  const demoStep = demoSteps.find((step) => !step.done);
+  const m = !demo ? guide : {
+    kind: demoStep ? 'step' : 'cheer',
+    text: !demoStep ? 'You did it, Maya! You finished every step.'
+      : demoStep.id === 'd1' ? `Hi Maya! First, ${demoStep.text.charAt(0).toLowerCase()}${demoStep.text.slice(1)}`
+        : `Nice work, Maya! Next, ${demoStep.text.charAt(0).toLowerCase()}${demoStep.text.slice(1)}`,
+  };
 
   // "Hi Maya! First, add a title…" → a greeting line and the instruction under it.
   const split = /^(.{1,28}?[!.?])\s+(.+)$/s.exec(m.text);
@@ -152,6 +201,9 @@ function StudentWorkspace() {
         <header className="sv-bar">
           <span className="sv-tile">{I.code}</span>
           <h1 className="sv-title">My Website</h1>
+          <button type="button" role="switch" aria-checked={demo} className="sv-demo" onClick={toggleDemo} data-testid="switch-demo">
+            <span className="sv-demo-track" aria-hidden="true"><span /></span>Demo
+          </button>
           <div className="sv-who">
             <span data-testid="text-student-name">{f.name}</span>
             <span className="sv-conn" data-s={f.status} data-testid="status-connection"><i aria-hidden="true" />{STATUS_LABEL[f.status]}</span>
@@ -194,6 +246,7 @@ function StudentWorkspace() {
         <header className="sv-fhead">
           <FadeMark />
           <span className="sv-fname">CoTeach AI</span>
+          {demo && <span className="sv-count sv-count-demo" data-testid="chip-demo">Demo · example lesson</span>}
           {f.steps.length > 0 && <span className="sv-count" aria-label={`${doneCount} of ${f.steps.length} steps done`}>{doneCount}/{f.steps.length}</span>}
           <button type="button" className="sv-ghost" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-label={open ? 'Minimize CoTeach AI' : 'Open CoTeach AI'} data-testid="button-dismiss-fade">{I.minus}</button>
           <button type="button" className="sv-ghost" onClick={() => { setWide((v) => !v); setOpen(true); }} aria-pressed={wide} aria-label={wide ? 'Make CoTeach AI smaller' : 'Make CoTeach AI larger'}>{I.popout}</button>
@@ -271,7 +324,7 @@ function StudentWorkspace() {
                 </div>
               ) : (
                 <ol className="sv-chat" aria-live="polite">
-                  {thread.map((t, i) => (
+                  {shownThread.map((t, i) => (
                     <li key={`t${i}`} className="sv-turn" data-from={t.from}>
                       <span className="sv-turn-who">{t.from === 'you' ? 'You' : t.kind === 'hint' ? 'CoTeach AI · hint' : 'CoTeach AI'}</span>
                       <p className="sv-bubble">{t.text}</p>
@@ -286,7 +339,7 @@ function StudentWorkspace() {
                       ) : null}
                     </li>
                   ))}
-                  {talk.transcripts.slice(-8).map((t) => (
+                  {(demo ? [] : talk.transcripts.slice(-8)).map((t) => (
                     <li key={t.id} className="sv-turn" data-from={t.source === 'student' ? 'you' : 'fade'}>
                       <span className="sv-turn-who">{t.source === 'student' ? 'You' : 'CoTeach AI'}</span>
                       <p className="sv-bubble">{t.text.replace(/\[[^\]]*\]\s*/g, '')}</p>

@@ -4,6 +4,7 @@ import type { Status } from '@/lib/socket';
 import TeacherView from '@/teacher/TeacherView';
 import { useTeacherVoice } from '@/teacher/use-teacher-voice';
 import type { LessonAck, Step, StudentUpdate } from '@/teacher/types';
+import { DEMO_STEPS, DEMO_STUDENTS, DEMO_TAUGHT, DEMO_VOICE } from '@/teacher/demo';
 
 export default function Teacher() {
   const [status, setStatus] = useState<Status>('connecting');
@@ -161,8 +162,29 @@ export default function Teacher() {
     await submitTyped(false);
   }
 
+  // Demo switch: an example class with sample data, so anyone can see the whole
+  // product at a glance. The live classroom keeps running underneath.
+  const [demo, setDemo] = useState(() => new URLSearchParams(window.location.search).has('demo'));
+  const [demoStudents, setDemoStudents] = useState(DEMO_STUDENTS);
+  const toggleDemo = () => { setDemoStudents(DEMO_STUDENTS); setDemo(on => !on); };
+  if (demo) {
+    return (
+      <TeacherView
+        demo onToggleDemo={toggleDemo}
+        status="online" lesson="" setLesson={() => {}} taught={DEMO_TAUGHT} steps={DEMO_STEPS}
+        question="" result={null} pendingLessons={0} pendingTask={false}
+        newSteps={false} lessonError="" sortedStudents={demoStudents}
+        helpPending={new Set()} voice={DEMO_VOICE}
+        helpStudent={id => setDemoStudents(list => list.map(s => s.studentId === id
+          ? { ...s, status: 'working', sentence: `${s.name} is on step ${s.stepIndex + 1} of 3`, reason: undefined } : s))}
+        teach={async () => {}} sendTask={async () => {}}
+      />
+    );
+  }
+
   return (
     <TeacherView
+      demo={false} onToggleDemo={toggleDemo}
       status={status} lesson={lesson} setLesson={setLesson} taught={taught} steps={steps}
       question={question} result={result} pendingLessons={pendingLessons} pendingTask={pendingTask}
       newSteps={newSteps} lessonError={lessonError} sortedStudents={sortedStudents}

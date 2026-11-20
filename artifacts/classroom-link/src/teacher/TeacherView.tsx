@@ -251,6 +251,9 @@ export default function TeacherView(p: TeacherViewProps) {
           ))}
         </div>
         <div className="td-top-right">
+          <button type="button" role="switch" aria-checked={!!p.demo} className="td-demo" onClick={p.onToggleDemo} data-testid="switch-demo">
+            <span className="td-demo-track" aria-hidden="true"><span /></span>Demo
+          </button>
           <button type="button" className="td-icon-btn bell" onClick={() => setBellOpen(true)} data-testid="button-attention"
             aria-label={helpList.length ? `${helpList.length} ${helpList.length === 1 ? 'student needs' : 'students need'} help` : 'No students need help'}>
             <Bell aria-hidden="true" />{helpList.length > 0 && <span className="td-bell-count">{helpList.length}</span>}
@@ -258,6 +261,12 @@ export default function TeacherView(p: TeacherViewProps) {
           <span className="td-me" aria-label="Teacher">N</span>
         </div>
       </header>
+
+      {p.demo && (
+        <p role="status" className="td-banner td-banner-demo" data-testid="banner-demo">
+          <Info aria-hidden="true" /><span><strong>Demo mode.</strong> This is an example class with sample students, so you can see everything CoTeach AI does. Switch Demo off to teach your live class.</span>
+        </p>
+      )}
 
       {!online && (
         <p role="status" className="td-banner">
