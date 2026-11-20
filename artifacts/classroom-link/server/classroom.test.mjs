@@ -134,8 +134,8 @@ test('stt: audio in, words out; clear errors for no key and no audio', async () 
   let sent = null;
   mountStt(app, '/', null, {
     fetchImpl: async (url, init) => {
-      sent = { url, key: init.headers['xi-api-key'], model: init.body.get('model_id'), file: init.body.get('file') };
-      return new Response(JSON.stringify({ text: ' Add a title with an h1 tag. ' }), { status: 200 });
+      sent = { url, key: init.headers['xi-api-key'], model: init.body.get('model_id'), lang: init.body.get('language_code'), tags: init.body.get('tag_audio_events'), file: init.body.get('file') };
+      return new Response(JSON.stringify({ text: ' (background noise) Add a title with an h1 tag. ' }), { status: 200 });
     },
   });
   const http = createServer(app);
@@ -152,6 +152,8 @@ test('stt: audio in, words out; clear errors for no key and no audio', async () 
     assert.deepEqual(await ok.json(), { ok: true, text: 'Add a title with an h1 tag.' });
     assert.equal(sent.key, 'test-key');
     assert.equal(sent.model, 'scribe_v1');
+    assert.equal(sent.lang, 'en');
+    assert.equal(sent.tags, 'false');
     assert.equal(sent.file.size, 1000);
     assert.equal(sent.file.name, 'speech.webm');
   } finally {

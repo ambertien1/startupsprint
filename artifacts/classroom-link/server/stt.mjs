@@ -26,6 +26,11 @@ export function mountStt(app, base, logger, { fetchImpl = fetch } = {}) {
       const ext = type.includes('mp4') ? 'mp4' : type.includes('wav') ? 'wav' : type.includes('ogg') ? 'ogg' : 'webm';
       const form = new FormData();
       form.append('model_id', MODEL);
+      // Without these, short clips can come back in another language, or as
+      // sound labels like "(background noise)" instead of words.
+      form.append('language_code', process.env.STT_LANGUAGE || 'en');
+      form.append('tag_audio_events', 'false');
+      form.append('diarize', 'false');
       form.append('file', new Blob([req.body], { type }), `speech.${ext}`);
       const response = await fetchImpl(API, {
         method: 'POST',
@@ -38,9 +43,10 @@ export function mountStt(app, base, logger, { fetchImpl = fetch } = {}) {
         throw new Error(`ElevenLabs ${response.status}: ${detail}`);
       }
       const data = await response.json();
-      const text = String(data?.text || '').trim();
+      // Drop any leftover sound labels, e.g. "(music)" or "[silence]".
+      const text = String(data?.text || '').replace(/[\[(][^\])]{0,40}[\])]/g, ' ').replace(/\s+/g, ' ').trim();
       logger?.info({ ms: Date.now() - started, bytes: req.body.length, chars: text.length }, 'stt');
-      if (!text) return res.json({ ok: false, error: "I didn't catch that. Try again, or type it." });
+      // Silence is normal while the teacher pauses: not an error, just no words.
       res.json({ ok: true, text });
     } catch (error) {
       logger?.error({ ms: Date.now() - started, error: error instanceof Error ? error.message : String(error) }, 'stt failed');
