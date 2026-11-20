@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { io, type Socket } from 'socket.io-client';
-import { checkSteps, DEMO_STEPS, INITIAL_CSS, initialHtml, mergeSteps, type FadeMessage, type Step } from './lesson';
+import { checkSteps, DEMO_TASK, DEMO_STEPS, INITIAL_CSS, initialHtml, mergeSteps, type FadeMessage, type Step } from './lesson';
 import { useStudentVoice } from './useStudentVoice';
 
 // The shared helper keeps its socket private. This student-only singleton is
@@ -21,6 +21,8 @@ export function useStudentFade() {
   const [html, updateHtml] = useState(() => initialHtml(studentId));
   const [css, updateCss] = useState(INITIAL_CSS);
   const [steps, setSteps] = useState<Step[]>(() => DEMO_STEPS.map((step) => ({ ...step })));
+  const [taskText, setTaskText] = useState(DEMO_TASK);
+  const [taskRevision, setTaskRevision] = useState(0);
   const [message, setMessage] = useState<FadeMessage>({
     text: `Hi ${name}! First, type a title in an h1 tag.`,
   });
@@ -34,12 +36,12 @@ export function useStudentFade() {
   const voice = useStudentVoice(message);
   const currentStepIndex = steps.findIndex((step) => !step.done);
 
-  const applyProgress = useCallback((base: Step[]) => {
+  const applyProgress = useCallback((base: Step[], announce = true) => {
     const checked = checkSteps(base, codeRef.current.html);
     const newlyDone = checked.filter((step, index) => step.done && !base[index].done);
     stepsRef.current = checked;
     setSteps(checked);
-    if (newlyDone.length) {
+    if (announce && newlyDone.length) {
       const allDone = checked.length > 0 && checked.every((step) => step.done);
       setMessage({
         kind: 'cheer',
@@ -52,13 +54,55 @@ export function useStudentFade() {
 
   useEffect(() => {
     const socket = getStudentSocket();
+    // The server sends one sentence snapshot immediately after each connection.
+    // Consume that first event quietly, even when the saved sentence is empty.
+    let awaitingSentenceSnapshot = true;
+    let joinTimer: ReturnType<typeof setTimeout> | null = null;
+    let connectionVersion = 0;
+    const finishJoin = () => {
+      if (joinTimer !== null) clearTimeout(joinTimer);
+      joinTimer = null;
+    };
+    const updateTask = (text: unknown, announce = true) => {
+      if (typeof text !== 'string' || !text.trim()) return;
+      setTaskText(text);
+      if (announce) {
+        setTaskRevision((revision) => revision + 1);
+        setMessage({ text: 'Your teacher has a new task.', speechText: text });
+      }
+    };
     const onConnect = () => {
+      const version = ++connectionVersion;
+      finishJoin();
+      awaitingSentenceSnapshot = true;
       setStatus('online');
+      // A server may return its snapshot by acknowledgement OR by the first
+      // steps:new event during this short join window. Neither should interrupt.
+      joinTimer = setTimeout(finishJoin, 3500);
+      socket.emit('student:join', { studentId, name }, (reply: unknown) => {
+        if (version !== connectionVersion || joinTimer === null || !socket.connected) return;
+        if (!reply || typeof reply !== 'object' || !('steps' in reply) || !Array.isArray(reply.steps)) return;
+        finishJoin();
+        applySteps(reply, false);
+      });
       socket.emit('code:update', codeRef.current);
     };
-    const onDisconnect = () => setStatus('offline');
-    const onSteps = (payload: { steps?: unknown }) => {
-      if (!payload || !Array.isArray(payload.steps)) return;
+    const onDisconnect = () => {
+      ++connectionVersion;
+      finishJoin();
+      setStatus('offline');
+    };
+    const onSentence = (payload: { text?: unknown } | null) => {
+      const isSnapshot = awaitingSentenceSnapshot;
+      awaitingSentenceSnapshot = false;
+      updateTask(payload?.text, !isSnapshot);
+    };
+    const applySteps = (payload: { task?: { text?: unknown } | null; steps?: unknown }, announce = true) => {
+      if (!payload) return;
+      if (!Array.isArray(payload.steps)) {
+        updateTask(payload.task?.text, announce);
+        return;
+      }
       const seen = new Set<string>();
       const incoming = payload.steps.filter((entry): entry is Step => {
         if (!entry || typeof entry.id !== 'string' || typeof entry.text !== 'string'
@@ -66,7 +110,14 @@ export function useStudentFade() {
         seen.add(entry.id);
         return true;
       });
-      applyProgress(mergeSteps(stepsRef.current, incoming));
+      applyProgress(mergeSteps(stepsRef.current, incoming), announce);
+      // Task announcements take priority over any progress cheer from the same event.
+      updateTask(payload.task?.text, announce);
+    };
+    const onSteps = (payload: { task?: { text?: unknown } | null; steps?: unknown }) => {
+      const isJoinReply = joinTimer !== null && Array.isArray(payload?.steps);
+      if (isJoinReply) finishJoin();
+      applySteps(payload, !isJoinReply);
     };
     const onSay = (payload: FadeMessage) => {
       if (!payload || typeof payload.text !== 'string') return;
@@ -82,18 +133,22 @@ export function useStudentFade() {
     socket.on('disconnect', onDisconnect);
     socket.on('connect_error', onDisconnect);
     socket.on('steps:new', onSteps);
+    socket.on('sentence:updated', onSentence);
     socket.on('fade:say', onSay);
     if (socket.connected) onConnect();
     else socket.connect();
     return () => {
+      ++connectionVersion;
+      finishJoin();
       socket.off('connect', onConnect);
       socket.off('disconnect', onDisconnect);
       socket.off('connect_error', onDisconnect);
       socket.off('steps:new', onSteps);
+      socket.off('sentence:updated', onSentence);
       socket.off('fade:say', onSay);
       socket.disconnect();
     };
-  }, [applyProgress]);
+  }, [applyProgress, studentId, name]);
 
   useEffect(() => { applyProgress(stepsRef.current); }, [html, applyProgress]);
 
@@ -128,6 +183,18 @@ export function useStudentFade() {
   }, []);
   const setHtml = useCallback((value: string) => { typed(); updateHtml(value); }, [typed]);
   const setCss = useCallback((value: string) => { typed(); updateCss(value); }, [typed]);
+  const repeatTask = useCallback(() => {
+    setMessage({ text: taskText, speechText: taskText });
+  }, [taskText]);
+  const requestHint = useCallback(() => {
+    const socket = getStudentSocket();
+    if (!socket.connected) {
+      voice.setQuestionNote('You are offline. Try asking for a hint again when connected.');
+      return;
+    }
+    socket.emit('hint:request', { studentId, stepIndex: stepsRef.current.findIndex((step) => !step.done) });
+    voice.setQuestionNote('Hint asked. Fade will help in a moment.');
+  }, [studentId, voice.setQuestionNote]);
   const askQuestion = useCallback((text: string) => {
     if (!text.trim()) return false;
     const socket = getStudentSocket();
@@ -142,7 +209,7 @@ export function useStudentFade() {
 
   return {
     name, studentId, html, css, setHtml, setCss, steps, currentStepIndex,
-    message, status, askQuestion,
+    message, status, askQuestion, requestHint, taskText, taskRevision, repeatTask,
     replay: voice.replay, questionNote: voice.questionNote,
     setVoiceSuppressed: voice.setVoiceSuppressed,
     unlockAudio: voice.unlockAudio, questionInputRef: voice.questionInputRef,

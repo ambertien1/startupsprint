@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useStudentFade } from '../student/useStudentFade';
 import { ConversationProvider } from '@elevenlabs/react';
@@ -33,7 +33,7 @@ export default function Student() {
 function StudentWorkspace() {
   const f = useStudentFade();
   const step = f.steps[f.currentStepIndex] ?? null;
-  const conversation = useFadeConversation({ studentId: f.studentId, html: f.html, css: f.css, step });
+  const conversation = useFadeConversation({ studentId: f.studentId, html: f.html, css: f.css, step, taskText: f.taskText });
   const [question, setQuestion] = useState('');
   const [open, setOpen] = useState(true);
   const [focused, setFocused] = useState<'html' | 'css'>('html');
@@ -41,12 +41,27 @@ function StudentWorkspace() {
   const cssRef = useRef<HTMLTextAreaElement>(null);
   const setSuppressed = useRef(f.setVoiceSuppressed);
   setSuppressed.current = f.setVoiceSuppressed;
+  const lastTaskRevision = useRef(f.taskRevision);
+  useEffect(() => {
+    if (lastTaskRevision.current === f.taskRevision) return;
+    lastTaskRevision.current = f.taskRevision;
+    if (conversation.connected) conversation.speakTask();
+  }, [f.taskRevision, conversation.connected, conversation.speakTask]);
+
+  const repeatTask = () => {
+    f.repeatTask();
+    setOpen(true);
+    if (conversation.connected) conversation.speakTask();
+  };
 
   useEffect(() => { document.title = 'My Website · Fade'; }, []);
-  useEffect(() => { setSuppressed.current(conversation.active); }, [conversation.active]);
+  // Update before passive message/speech effects, including a teacher message
+  // arriving in the same render as a failed/disconnected conversation.
+  useLayoutEffect(() => { setSuppressed.current(conversation.connected); }, [conversation.connected]);
   useEffect(() => { setOpen(true); }, [f.message]);
   useEffect(() => { if (conversation.transcripts.length) setOpen(true); }, [conversation.transcripts]);
   useEffect(() => { if (conversation.active) setOpen(true); }, [conversation.active]);
+  useEffect(() => { if (conversation.fallback && conversation.note) setOpen(true); }, [conversation.fallback, conversation.note]);
 
   const srcDoc = useMemo(() => buildPreview(f.html, f.css), [f.html, f.css]);
 
@@ -87,6 +102,12 @@ function StudentWorkspace() {
         </nav>
 
         <aside className="fs-side">
+          <section className="fs-task" aria-labelledby="fs-task-heading">
+            <h2 id="fs-task-heading">From your teacher</h2>
+            <p data-testid="text-teacher-task">{f.taskText}</p>
+            <button type="button" className="fs-btn" onClick={repeatTask} data-testid="button-repeat-task">Repeat the task</button>
+          </section>
+          <div className="fs-side-scroll">
           <p className="fs-label">Files</p>
           <ul className="fs-files">
             <li><button type="button" className="fs-file" data-on={focused === 'html'} onClick={() => focusFile('html')} data-testid="file-index"><span className="fs-fi fs-fi-html" aria-hidden="true">&lt;&gt;</span>index.html</button></li>
@@ -107,6 +128,7 @@ function StudentWorkspace() {
               );
             })}
           </ol>
+          </div>
         </aside>
 
         <main className="fs-editors" aria-label="Your code">
@@ -149,8 +171,9 @@ function StudentWorkspace() {
           ) : null}
 
           <div className="fs-actions">
-            <button type="button" className="fs-btn" onClick={() => { if (!conversation.repeat()) f.replay(); }} data-testid="button-say-again" tabIndex={showPanel ? 0 : -1}>Say it again</button>
-            <button type="button" className="fs-btn fs-btn-pri" onClick={() => f.askQuestion('Can I have a hint?')} data-testid="button-hint" tabIndex={showPanel ? 0 : -1}>Hint</button>
+            <button type="button" className="fs-btn" onClick={f.replay} data-testid="button-say-again" tabIndex={showPanel ? 0 : -1}>Say it again</button>
+            <button type="button" className="fs-btn" onClick={repeatTask} data-testid="button-repeat-task-fade" tabIndex={showPanel ? 0 : -1}>Repeat the task</button>
+            <button type="button" className="fs-btn fs-btn-pri" onClick={f.requestHint} data-testid="button-hint" tabIndex={showPanel ? 0 : -1}>Hint</button>
           </div>
 
           {conversation.fallback ? (

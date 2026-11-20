@@ -1,11 +1,14 @@
 export type Step = { id: string; text: string; done: boolean };
 export type FadeMessage = {
   text: string;
+  speechText?: string;
   audioUrl?: string | null;
   kind?: string;
   code_quote?: string | null;
   lesson_quote?: string | null;
 };
+
+export const DEMO_TASK = 'Add a title to your page with an h1 tag, then add a paragraph under it.';
 
 export const DEMO_STEPS: Step[] = [
   { id: 's1', text: 'Type a title for your website in an h1 tag', done: false },
@@ -45,7 +48,7 @@ export function checkSteps(steps: Step[], html: string): Step[] {
   const source = /<body\b[^>]*>([\s\S]*?)(?:<\/body\s*>|$)/i.exec(clean)?.[1] ?? '';
   const nonempty = (markup: string) => {
     const doc = new DOMParser().parseFromString(markup, 'text/html');
-    return Boolean(doc.body.textContent?.replace(/\u00a0/g, ' ').trim());
+    return Boolean(doc.body.textContent?.replace(/ /g, ' ').trim());
   };
   const titles = [...source.matchAll(/<h1\b[^>]*>([\s\S]*?)<\/h1\s*>/gi)];
   const title = titles.find((match) => nonempty(match[1]));
