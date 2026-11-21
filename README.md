@@ -13,23 +13,12 @@ Built in four hours at the Berkeley Startup Sprint (November 20, 2026) by Nabiha
 | Live app | https://deep-naive-files.replit.app |
 | Teacher page | https://deep-naive-files.replit.app/teacher |
 | Student page (Maya) | https://deep-naive-files.replit.app/student |
-| A student who starts stuck (Leo) | https://deep-naive-files.replit.app/student?name=Leo |
 | **Example class, teacher view** | https://deep-naive-files.replit.app/teacher?demo |
 | **Example lesson, student view** | https://deep-naive-files.replit.app/student?demo |
 
 The two **Demo** links open an example with sample students and a sample lesson, clearly labelled on screen, so you can see the whole product in ten seconds. Every page also has a Demo switch. The other links are the real, live product.
 
 To try it live: open the teacher page and one or two student pages in separate tabs, click once on each student page so sound can play, then press **Start listening** on the teacher page and teach. Use Chrome and allow the microphone. Typing works everywhere as a fallback ("Type instead").
-
-## How this README maps to the rubric
-
-| Criterion | Points | Where |
-| --- | --- | --- |
-| Problem understanding and user evidence | 25 | [Section 1](#1-problem-understanding-and-user-evidence) |
-| Usefulness and product experience | 25 | [Section 2](#2-usefulness-and-product-experience) |
-| Technical execution | 25 | [Section 3](#3-technical-execution) |
-| Differentiation and next-step business reasoning | 15 | [Section 4](#4-differentiation-and-next-step-business-reasoning) |
-| Demo clarity | 10 | [Section 5](#5-the-demo-in-two-minutes) |
 
 ---
 
