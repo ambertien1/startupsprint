@@ -227,19 +227,6 @@ These are our hypotheses going in. The pilot in step 1 is what would confirm or 
 
 ---
 
-## 5. The demo in two minutes
-
-1. **Teacher explains.** "HTML is made of tags. Every tag you open needs a closing tag." Nothing appears on student screens: it knew that was not an instruction.
-2. **Teacher gives the task, mid-lesson.** "Now add a title to your page with an h1 tag, then add a paragraph under it." Steps appear on every student screen.
-3. **Maya hears her first step by name**, types `<h1>My Website</h1>`, and step 1 ticks. CoTeach AI gives her the next one.
-4. **Maya asks "What's a paragraph tag?"** It answers in the teacher's words. "Why CoTeach AI said this" shows the quotes.
-5. **Leo is stuck** on an unfinished closing tag. He gets two hints, then the teacher page shows **"Leo needs you"** with the reason and his code.
-6. **"How CoTeach AI decided"** on Leo's card shows every step the agent took, including the hint it was not allowed to give.
-
-Or open the [teacher example](https://deep-naive-files.replit.app/teacher?demo) and the [student example](https://deep-naive-files.replit.app/student?demo) to see the same story with sample data.
-
----
-
 ## Run it yourself
 
 It is developed and hosted on Replit, which is the simplest way to run it: import this repository, add the secrets below, and press Run.
