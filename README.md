@@ -75,13 +75,6 @@ What we have both seen, in two different subjects:
 
 That last point is getting harder, not easier. At the start of the 2024–25 school year, 74% of US public schools reported difficulty filling at least one teaching position with a fully certified teacher, and special education positions were the hardest of all to fill ([NCES School Pulse Panel](https://nces.ed.gov/learn/press-release/most-u-s-public-elementary-and-secondary-schools-faced-hiring-challenges-start-2024-25-academic-year)). The students who most need a patient adult beside them are in classrooms that have the fewest adults to spare.
 
-What we kept wishing for as teachers:
-
-- **To say it once.** Not to stop the lesson to re-explain the same three steps to five different students.
-- **To know who actually needs us**, so we walk to the right desk first.
-- **For help to be private and patient.** A student will ask a calm voice in their headphones the question they would never ask out loud in front of the class.
-- **To stay the teacher.** We don't want a tool that hands out answers. We want one that repeats *our* words, points at the right spot, and then gets us when it should.
-
 **We would use this ourselves.** In a coding camp it would hold every student's place in the steps, so nobody is lost just because they looked away. In a math class it would do the same for the steps of a problem. It would give us back the time we spend repeating instructions and let us spend it on the students who need a person. And because what we have seen is the same in coding and in math, we are confident other teachers would find it useful too: the problem is not the subject, it is spoken multi-step instructions and one teacher for a whole room.
 
 **What we have not done yet:** we built this in four hours and have not run it with a real class. Our evidence today is the research above and our own experience teaching. Putting it in front of real students and teachers is the first next step (Section 4).
@@ -200,7 +193,7 @@ Three things we think are hard to copy quickly:
 
 ### Next steps
 
-**1. Put it in front of real classes.** We have not tested with students yet. The first step is a handful of real lessons with teachers we know, measuring two things: how often students ask the teacher to repeat instructions, and how long a stuck student waits before getting help.
+**1. Prove it in private programs.** We have not tested with students yet. The first step is a handful of real sessions in the kinds of programs we teach in: coding camps and math tutoring. We would measure two things: how often students ask for instructions to be repeated, and how long a stuck student waits before getting help.
 
 **2. A Chrome extension, so it works on every site.** Today CoTeach AI is its own page with its own code editor. Schools already run on Google Docs, Google Classroom, Canvas, Desmos, Scratch and many others, and Chromebooks are common in classrooms. As a browser extension, the same CoTeach AI panel would float over whatever site the class is using, and the "follow the student's work" checks would read the page they are on. Nobody has to move their class to a new platform, which is usually the thing that stops a school adopting a new tool.
 
@@ -210,9 +203,11 @@ Three things we think are hard to copy quickly:
 
 ### Business reasoning
 
-- **Who it is for first:** places where one adult teaches many students on screens and instructions are multi-step. Coding and STEM programs and after-school centres are the easiest start, because they can decide quickly. Schools and districts are the larger market and the slower sale.
-- **Who pays:** the school, district or learning centre, per classroom or per teacher. Not families and not students.
-- **Why they would:** it supports students with learning differences inside the general classroom, where about two-thirds of them already spend most of their day, without extra staff time, and it helps the whole class at the same time. With most schools reporting difficulty filling teaching positions, and special education the hardest to staff, a tool that gives one teacher more reach is solving a problem schools already have a budget line for.
+- **Where we start: the private sector, to prove the concept.** Coding camps, tutoring and math learning centres, and after-school and enrichment programs. These are the settings we teach in ourselves, so we can get it in front of real students quickly. They decide in days rather than budget cycles, they have small groups where one instructor covers many students on screens, and they compete on how much individual attention each student gets, which is exactly what CoTeach AI stretches.
+- **What the proof of concept has to show:** in a handful of real sessions, that students ask for instructions to be repeated less often, that stuck students wait less time for help, and that instructors would choose to keep using it. Those results are what we would take to schools.
+- **Where it goes next: schools and districts.** The larger market and the slower sale, with procurement and student-privacy requirements we would meet before any school deployment. Evidence from private programs is what earns that conversation.
+- **Who pays:** the program or learning centre first, and later the school or district, per classroom or per instructor. Not families and not students.
+- **Why they would:** it supports students with learning differences inside the general classroom, where about two-thirds of them already spend most of their day, without extra staff time, and it helps the whole class at the same time. With most schools reporting difficulty filling teaching positions, and special education the hardest to staff, a tool that gives one teacher more reach addresses a problem schools are already feeling.
 - **What it costs to run:** both agents use Claude's fast model. From our prompt sizes, each AI decision costs a fraction of a cent at current API prices. This is our estimate, not a measured bill; voice is the larger cost and is the first thing we would measure in a pilot.
 
 These are our hypotheses going in. The pilot in step 1 is what would confirm or change them.
