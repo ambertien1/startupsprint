@@ -19,74 +19,159 @@ Built in four hours at the Berkeley Startup Sprint (November 20, 2026) by Nabiha
 
 The two **Demo** links open an example with sample students and a sample lesson, clearly labelled on screen, so you can see the whole product in ten seconds. Every page also has a Demo switch. The other links are the real, live product.
 
-To try it live: open the teacher page and one or two student pages in separate tabs, click once on each student page so sound can play, then press **Start listening** on the teacher page and teach. Use Chrome, and allow the microphone. Typing works everywhere as a fallback ("Type instead").
+To try it live: open the teacher page and one or two student pages in separate tabs, click once on each student page so sound can play, then press **Start listening** on the teacher page and teach. Use Chrome and allow the microphone. Typing works everywhere as a fallback ("Type instead").
 
-## The need
+## How this README maps to the rubric
 
-In a classroom, instructions are given once, out loud, in the middle of everything else the teacher is saying. A student has to catch them, hold all of them in their head, put them in order, and start, all while the lesson keeps moving.
+| Criterion | Points | Where |
+| --- | --- | --- |
+| Problem understanding and user evidence | 25 | [Section 1](#1-problem-understanding-and-user-evidence) |
+| Usefulness and product experience | 25 | [Section 2](#2-usefulness-and-product-experience) |
+| Technical execution | 25 | [Section 3](#3-technical-execution) |
+| Differentiation and next-step business reasoning | 15 | [Section 4](#4-differentiation-and-next-step-business-reasoning) |
+| Demo clarity | 10 | [Section 5](#5-the-demo-in-two-minutes) |
 
-For many students that is the hardest part of the task, and it has nothing to do with whether they can do the work:
+---
 
-- A student with **ADHD** catches step one and misses steps two and three.
-- A student with **dyslexia** or a processing difference is still working out the first instruction when the third one is given.
-- An **autistic** student may need the instruction to be literal and unambiguous, and spoken instructions rarely are.
-- Any student who looked away for five seconds is now lost, and often won't ask.
+## 1. Problem understanding and user evidence
 
-The usual fixes cost the teacher time she doesn't have: writing every instruction on the board, repeating herself, or going desk to desk. And help that is given to one student in front of the class singles that student out.
+### The problem
 
-## Why we built it: our experience teaching
+In a classroom, instructions are given once, out loud, in the middle of everything else the teacher is saying. To act on them a student has to catch them, hold all of them in mind, put them in order, and start, while the lesson keeps moving.
 
-We have both taught, and this is a problem we have run into ourselves. In our experience, most of the time a student who is "stuck" is not stuck on the idea. They are stuck on what they were supposed to do next, and they are waiting for an adult to come back around.
+For many students that is the hardest part of the task, and it has nothing to do with whether they can do the work. A student who is "stuck" is very often not stuck on the idea. They are stuck on what they were supposed to do next.
+
+### What the research says
+
+**Following multi-step spoken instructions depends on working memory, and classrooms overload it.** Researchers Susan Gathercole and Tracy Alloway, who studied working memory in classrooms for years, describe children with poor working memory as struggling to follow multi-step instructions and losing their place in tasks. A typical sign is a child who completes the first step, then loses track and copies what the rest of the class is doing. Their classroom guidance recommends exactly what CoTeach AI automates: shorter instructions, given one step at a time, with something the student can look back at.
+Sources: [MRC Cognition and Brain Sciences Unit, "Understanding how working memory problems impair classroom learning"](https://www.mrc-cbu.cam.ac.uk/our-research/gathercole/classroom-learning/) · [Gathercole and Alloway, *Understanding Working Memory: A Classroom Guide*](https://calm.mrc-cbu.cam.ac.uk/wp-content/uploads/calm/sites/5/2024/03/WM-classroom-guide.pdf) · [Dunning, Holmes and Gathercole, *Developmental Science* (2013)](https://pmc.ncbi.nlm.nih.gov/articles/PMC4232921/)
+
+**The students this affects most are a large part of every class.**
+
+| Who | How many | Source |
+| --- | --- | --- |
+| Students receiving special education services (IDEA), 2022–23 | 7.5 million, about 15% of all US public school students | [NCES](https://nces.ed.gov/programs/coe/indicator/cgg/students-with-disabilities) |
+| Of those, students with a specific learning disability such as dyslexia | 32%, the largest single category | [NCES](https://nces.ed.gov/programs/coe/indicator/cgg/students-with-disabilities) |
+| US children aged 3–17 ever diagnosed with ADHD (2022, parent-reported) | 11.4%, about 7.1 million, roughly 1 in 9 | [CDC](https://www.cdc.gov/adhd/data/index.html) |
+| 8-year-olds identified with autism (2022 data, 16 monitoring sites) | About 1 in 31 | [CDC ADDM report, as reported by NBC News](https://www.nbcnews.com/health/health-news/autism-rates-up-cdc-report-2025-rfk-jr-rcna201305) |
+
+**And they are in the general classroom.** Roughly two-thirds of students with disabilities spend 80% or more of their school day in general classes ([Education Week, from federal data](https://www.edweek.org/teaching-learning/special-education-definition-statistics-and-trends/2019/12); see also [NCES](https://nces.ed.gov/fastfacts/display.asp?id=59)). That means one teacher, one set of spoken instructions, and a room where several students need those instructions in a different form.
+
+These figures come from the linked sources. We did not collect them ourselves.
+
+### Why this helps every classroom, not only students with a diagnosis
+
+The need is widest where it is least visible:
+
+- **English learners** are 10.6% of US public school students, about 5.3 million ([NCES, fall 2021](https://nces.ed.gov/programs/coe/indicator/cgf/english-learners)). Hearing an instruction once in a second language is hard. Reading it, step by step, in the teacher's own key words, is far easier.
+- **Any student who looked away for five seconds**, came in late, or was finishing the last task. Today they either interrupt the lesson or quietly fall behind.
+- **Students who won't ask.** In a room of screens, the quiet student who is stuck looks exactly like the one who is fine.
+- **The teacher.** Every minute spent repeating the same three steps to five students is a minute not spent teaching.
+
+This is the idea behind Universal Design for Learning, the framework many schools already use: build the support into the lesson for everyone, so no one has to be singled out to get it. One of its core guidelines is to offer alternatives for auditory information, such as text for spoken language ([CAST UDL Guidelines](https://udlguidelines.cast.org/)). It is the classroom version of the curb cut: built for wheelchairs, used by everyone with a stroller or a suitcase. Because the whole class uses CoTeach AI, the student who needs it most is just another student using it.
+
+### Our evidence: what we have seen teaching
+
+We are not guessing at this problem. We are the users.
+
+**Nabiha has taught a lot of coding camps**, with students of different ages and different needs in the same room. A coding task is a chain of small steps, and it is very easy to get lost in the middle of one. A student misses one instruction, or gets sidetracked for a moment, and from then on they are not behind on the idea, they are behind on *where we are*. The same instructions get repeated to one student after another, and the students who need the most support are usually the ones who lose the thread first.
+
+**Amber teaches math**, and the same thing happens there. A problem is a sequence of steps too. Students are unsure what to do first and where to go next, and a lot of teaching time goes into saying the same thing again rather than moving forward.
+
+What we have both seen, in two different subjects:
+
+- **A lot of repetition.** The same instruction, given again and again, one student at a time.
+- **A lot of confusion about what to do and where to go next**, far more often than confusion about the idea itself.
+- **Not enough of us.** One teacher cannot help every student perfectly and still keep the lesson on time. There is a set amount of content and a strict time frame. Every minute spent re-explaining steps to one student is a minute the rest of the class is waiting, or a minute cut from the lesson.
+
+That last point is getting harder, not easier. At the start of the 2024–25 school year, 74% of US public schools reported difficulty filling at least one teaching position with a fully certified teacher, and special education positions were the hardest of all to fill ([NCES School Pulse Panel](https://nces.ed.gov/learn/press-release/most-u-s-public-elementary-and-secondary-schools-faced-hiring-challenges-start-2024-25-academic-year)). The students who most need a patient adult beside them are in classrooms that have the fewest adults to spare.
 
 What we kept wishing for as teachers:
 
 - **To say it once.** Not to stop the lesson to re-explain the same three steps to five different students.
-- **To know who actually needs us.** In a room of students on screens, the quiet ones who are stuck look exactly like the ones who are fine.
+- **To know who actually needs us**, so we walk to the right desk first.
 - **For help to be private and patient.** A student will ask a calm voice in their headphones the question they would never ask out loud in front of the class.
 - **To stay the teacher.** We don't want a tool that hands out answers. We want one that repeats *our* words, points at the right spot, and then gets us when it should.
 
-CoTeach AI is the tool we would want in our own classrooms. It would give us back the minutes we spend repeating instructions, and it would give our students who struggle most with instructions the same starting line as everyone else. Because the whole class uses it, nobody is singled out: the same way curb cuts built for wheelchairs help everyone with a stroller or a suitcase.
+**We would use this ourselves.** In a coding camp it would hold every student's place in the steps, so nobody is lost just because they looked away. In a math class it would do the same for the steps of a problem. It would give us back the time we spend repeating instructions and let us spend it on the students who need a person. And because what we have seen is the same in coding and in math, we are confident other teachers would find it useful too: the problem is not the subject, it is spoken multi-step instructions and one teacher for a whole room.
 
-## What it does
+**What we have not done yet:** we built this in four hours and have not run it with a real class. Our evidence today is the research above and our own experience teaching. Putting it in front of real students and teachers is the first next step (Section 4).
 
-1. **The teacher clicks once and teaches.** CoTeach AI listens and keeps the lesson transcript.
-2. **It picks the instructions out of the lesson.** The teacher never marks what is a task. Explaining ("HTML is made of tags") creates nothing. An instruction ("now add a title with an h1 tag, then a paragraph under it") becomes short, ordered steps, in her own key words.
-3. **Every student gets the steps in about a second**, and hears their current step by name: "Hi Maya! First, add a title to your page with an h1 tag."
-4. **It follows each student's work as they type.** Steps tick off when the code is right, and it gives the next one: "Nice work, Maya! Step 1 is done. Next, …"
-5. **A student can ask out loud.** The answer comes from what the teacher said, in her words, with a hint and never the finished answer.
-6. **It keeps watching a student who is stuck.** When they stop typing with a step unfinished, it looks at their code and decides: nudge, wait, or call the teacher.
-7. **The teacher sees one plain sentence per student**, stuck students first: "Leo needs you", with the reason, his code, and what CoTeach AI already tried.
+---
 
-The demo lesson is HTML because code can be checked live, but the idea works for any subject where students work on a screen.
+## 2. Usefulness and product experience
 
-## How it works
+### For the teacher: nothing new to do
 
-Two AI agents run on the server, both on Claude.
+1. **She clicks once and teaches.** There is no form to fill in and no "task" button to remember. CoTeach AI listens and keeps the lesson transcript.
+2. **It picks the instructions out of the lesson.** Explaining ("HTML is made of tags") creates nothing. An instruction ("now add a title with an h1 tag, then a paragraph under it") becomes short, ordered steps in her own key words.
+3. **She sees one plain sentence per student**, stuck students first: "Maya is on step 2 of 3", "Leo needs you". A stuck student's card shows the reason, their code, and what CoTeach AI already tried, so she arrives knowing what to say.
+4. **She can check what it heard** ("View transcript") and see why it did anything ("How CoTeach AI decided").
 
-**The steps agent** hears everything the teacher says and decides whether she just gave the class a task. If she did, it rewrites it: one action per step, ordered by when to do it, corrections applied ("blue, no wait, purple" becomes purple), filler dropped, her key words kept, at about a 5th-grade reading level. Later instructions update the list without resetting anyone's progress.
+### For the student: always know the next step
+
+1. **Steps appear in about a second**, and CoTeach AI says the current one aloud by name: "Hi Maya! First, add a title to your page with an h1 tag."
+2. **One step is marked "Now".** The others are "Done" or "Next", with a progress bar. A student who lost track can see exactly where they are, and press **Say it again** as often as they like.
+3. **It follows their work as they type.** When a step is right it ticks, and CoTeach AI moves them on: "Nice work, Maya! Step 1 is done. Next, …"
+4. **They can ask out loud or by typing.** The answer comes from what the teacher said, in her words, with a hint and never the finished answer. A "Why CoTeach AI said this" toggle shows the teacher's sentence and the part of their own code it was talking about.
+5. **If they get stuck, it notices.** When they stop typing with a step unfinished, it looks at their code and decides whether to nudge, wait, or bring in the teacher. If it calls the teacher, it tells the student so.
+
+### Design choices made for the students who need it most
+
+- One short sentence per step, at about a 5th-grade reading level, one action per step.
+- Status is never shown by colour alone: every chip has an icon and a word.
+- CoTeach AI is not allowed to say "wrong", "mistake" or "error". It names what is working first.
+- Voice and text always appear together, and every microphone feature has a typed fallback.
+- Steps and conversation are on separate tabs, so the list of what to do is never pushed off screen by a chat.
+
+The demo lesson is HTML because code can be checked live, but the same flow works for any subject where students work on a screen.
+
+---
+
+## 3. Technical execution
+
+### How it is built
+
+- **One Node server** (Express + Socket.IO) serves both pages and holds the classroom in memory. No database and no logins, so there is nothing to set up before a lesson.
+- **React** front end for the teacher and student pages.
+- **Claude** (Anthropic API) runs two agents, with structured output and tool use.
+- **ElevenLabs** provides speech-to-text for the teacher's microphone and students' questions, text-to-speech for CoTeach AI's voice, and a live voice conversation on the student page.
+- **Replit** for building and hosting.
+
+### The two agents
+
+**The steps agent** hears everything the teacher says and first decides one thing: did she just give the class a task? If not, nothing changes on any screen. If so, it rewrites it: one action per step, ordered by when to do it rather than when she said it, corrections applied ("blue, no wait, purple" becomes purple), filler dropped, her key words kept. Later instructions update the list without resetting anyone's progress. When it is unsure whether something was a task, it treats it as not a task rather than guessing.
 
 **The student agent** is woken by a pause, a hint request, or a question. Nothing it does is scripted. It has three evidence tools (read the student's code, run the step checks, get the lesson and hint history) and three actions (speak, flag the teacher, wait), and it chooses.
 
-What makes it trustworthy is that the code, not the prompt, enforces the rules:
+### The decisions we made, and why
 
-- **Grounding.** Every line it speaks must carry an exact quote from the student's code and an exact quote from the teacher's lesson. The server checks both quotes really exist. A made-up quote is rejected and the agent has to try again.
-- It must read the student's code before it acts.
-- It can't say "wrong", "mistake" or "error".
-- It can only cheer when every check passes.
-- Hints are limited. After that it has to bring in the teacher, and the student is told so.
-- A question always gets an answer. If the lesson didn't cover it, it says the teacher hasn't covered that yet.
+| Decision | Why |
+| --- | --- |
+| **The teacher never marks what is a task.** One stream of speech; the AI finds the instructions. | A button she has to press before giving instructions is one more thing to forget, and it turns the product into a voice-typed form. Telling "the h1 tag makes a big title" apart from "now add a title with an h1 tag" is the hard, valuable part. |
+| **Rules are enforced in code, not only in the prompt.** | A prompt is a request. We wanted guarantees. The server rejects any action that breaks a rule and makes the agent try again. |
+| **Every spoken line must be grounded.** It carries an exact quote from the student's code and an exact quote from the teacher's lesson, and the server checks both really exist. | This is what stops an AI helper inventing things or drifting from what the teacher taught. A made-up quote is refused. |
+| **A question always gets an answer; a hint budget cannot silence it.** | In testing, a question once went unanswered because hints had run out. We changed the rule: answers never count as hints, and if the lesson did not cover it, CoTeach AI says the teacher has not covered that yet. |
+| **The server watches each student, not the page.** | The server re-checks a student each time they stop typing on an unfinished step, and keeps looking at a stuck student until the step passes or the teacher is called. It does not depend on the student pressing anything. |
+| **The fast Claude model for both agents.** | Steps have to arrive while the teacher's sentence is still in the air. On the live app a task became steps on every screen in about 1.3 seconds. |
+| **Anything not from the AI is labelled.** | If the AI cannot be reached, a plain sentence splitter produces steps and the teacher page says "Basic steps (AI unavailable)". Nothing staged is ever passed off as AI. |
+| **Every tool call is logged and shown.** | The teacher page shows what the agent read, what it tried, and what was rejected, under "How CoTeach AI decided". The reasoning is visible, not a black box. |
 
-Every tool call, including the rejected ones, is logged and shown on the teacher page under **How CoTeach AI decided**, so the reasoning is visible, not a black box.
+Other rules the server enforces on the student agent: it must read the student's code before acting; it cannot say "wrong", "mistake" or "error"; it can only cheer when every check passes; hints are limited, after which it must bring in the teacher and tell the student.
 
-**Voice** is ElevenLabs: speech-to-text for the teacher's microphone and students' questions, text-to-speech for CoTeach AI's voice, and a live voice conversation on the student page.
+### How we know it works
 
-### Stack
+- **26 automated tests** cover the rules above: grounding, the hint limit, questions always being answered, step checks, live progress, and the full teacher-to-student flow.
+- **An end-to-end run** (`server/demo-run.mjs`) plays a whole lesson against a running server with one teacher and four students and checks 12 things, from "explaining creates no steps" to "Leo needs you reaches the teacher with a reason and his code".
+- **On the live app, with real keys, that run passed 12 of 12**, including real AI decisions and generated audio.
 
-- Node, Express and Socket.IO, with all classroom state in memory (no database, no logins)
-- React front end, served by the same server
-- Claude (Anthropic API) with tool use and structured output
-- ElevenLabs for speech in and speech out
-- Built and hosted on Replit
+### What is live and what is set up for the demo
+
+We would rather be exact about this.
+
+- **Live:** the real-time sync, the microphone and transcription, both AI agents and every decision they make, the grounding checks, the voice, the step checks, and the "needs you" flag.
+- **Set up for the demo:** one lesson, students who join by a name in the link (Maya by default), and Leo, who starts with a deliberately unfinished line of code so there is a stuck student to show.
+- **Sample data:** anything shown with the **Demo** switch on. It is labelled on screen and never mixed with the live class.
 
 ### Where things live
 
@@ -96,24 +181,67 @@ Every tool call, including the rejected ones, is logged and shown on the teacher
 | `artifacts/classroom-link/server/stepsAgent.mjs` | Teacher's words into steps |
 | `artifacts/classroom-link/server/studentAgent.mjs` | The student agent and its grounding rules |
 | `artifacts/classroom-link/server/checks.mjs` | Live checks for each step |
-| `artifacts/classroom-link/server/classroom.mjs` | Socket events and classroom state |
+| `artifacts/classroom-link/server/classroom.mjs` | Socket events, classroom state, the watching loop |
 | `artifacts/classroom-link/server/voice.mjs`, `stt.mjs` | Speech out and speech in |
+| `artifacts/classroom-link/server/*.test.mjs`, `demo-run.mjs` | Tests and the end-to-end run |
 | `artifacts/classroom-link/src/teacher/` | Teacher page |
 | `artifacts/classroom-link/src/pages/student.tsx`, `src/student/` | Student page |
 | `CLAUDE.md` | The original plan and the full list of socket events |
 
-## What is live and what is set up for the demo
+---
 
-We would rather be exact about this.
+## 4. Differentiation and next-step business reasoning
 
-- **Live:** the real-time sync, the microphone and transcription, both AI agents and every decision they make, the grounding checks, the voice, the step checks, and the "needs you" flag.
-- **Set up for the demo:** one lesson, students who join by a name in the link (Maya by default), and Leo, who starts with a deliberately unfinished line of code so there is a stuck student to show.
-- **Sample data:** anything shown with the **Demo** switch on. It is labelled on screen and never mixed with the live class.
+### What is different
 
-## Does it work
+Most classroom AI today sits in one of four places:
 
-- 26 automated tests cover the rules above: grounding, the hint limit, questions always being answered, step checks, and the full teacher-to-student flow.
-- `server/demo-run.mjs` runs a whole lesson against a running server with one teacher and four students, and checks 12 things end to end. On the live app, with real keys, it passed 12 of 12, including real AI decisions and audio. In that run a task became steps on every screen in about 1.3 seconds.
+- **Live captions and transcription** write down everything the teacher says. They do not separate the instruction from the explanation, and a wall of text is no easier to follow than speech.
+- **AI tutors and chatbots** wait for a student to ask, and many will simply give the answer. They do not know what this teacher said in this lesson.
+- **Direction and worksheet generators** turn text a teacher types beforehand into steps. They do not work from live speech, and they produce one shared handout.
+- **Classroom monitoring tools** watch student screens for off-task behaviour. They do not help the student do the task.
+
+CoTeach AI does the part in between that none of those do: it **starts from the teacher's live voice**, finds the instruction inside the lesson with no extra action from her, gives **each student their own tracked steps**, follows their work as they type, and answers **in the teacher's own words**. When we searched in November 2026 we did not find a product that turns a teacher's live speech into per-student steps as she talks. The closest we found worked from typed text or from recordings after the lesson. We cannot claim nothing like it exists anywhere, only that we looked and did not find it.
+
+Three things we think are hard to copy quickly:
+
+1. **Grounding checked by code.** The helper can only say things backed by an exact quote from the lesson and from the student's work.
+2. **The teacher stays the authority.** It repeats her, it does not replace her, and it hands the student back to her when it should.
+3. **Whole-class by design.** It is not a special-education add-on, so a school can adopt it for everyone and the students who need it most are never singled out.
+
+### Next steps
+
+**1. Put it in front of real classes.** We have not tested with students yet. The first step is a handful of real lessons with teachers we know, measuring two things: how often students ask the teacher to repeat instructions, and how long a stuck student waits before getting help.
+
+**2. A Chrome extension, so it works on every site.** Today CoTeach AI is its own page with its own code editor. Schools already run on Google Docs, Google Classroom, Canvas, Desmos, Scratch and many others, and Chromebooks are common in classrooms. As a browser extension, the same CoTeach AI panel would float over whatever site the class is using, and the "follow the student's work" checks would read the page they are on. Nobody has to move their class to a new platform, which is usually the thing that stops a school adopting a new tool.
+
+**3. Beyond coding.** The steps agent already works on any spoken instruction. What changes per subject is how a step is checked: text in a document, an answer in a maths tool, a completed field in a form. We would add subjects one check type at a time.
+
+**4. What a real product needs.** Accounts and classes so lessons carry over; student data privacy built for schools before any real deployment; and after-class summaries for the teacher showing which instructions students lost most often and who needed help.
+
+### Business reasoning
+
+- **Who it is for first:** places where one adult teaches many students on screens and instructions are multi-step. Coding and STEM programs and after-school centres are the easiest start, because they can decide quickly. Schools and districts are the larger market and the slower sale.
+- **Who pays:** the school, district or learning centre, per classroom or per teacher. Not families and not students.
+- **Why they would:** it supports students with learning differences inside the general classroom, where about two-thirds of them already spend most of their day, without extra staff time, and it helps the whole class at the same time. With most schools reporting difficulty filling teaching positions, and special education the hardest to staff, a tool that gives one teacher more reach is solving a problem schools already have a budget line for.
+- **What it costs to run:** both agents use Claude's fast model. From our prompt sizes, each AI decision costs a fraction of a cent at current API prices. This is our estimate, not a measured bill; voice is the larger cost and is the first thing we would measure in a pilot.
+
+These are our hypotheses going in. The pilot in step 1 is what would confirm or change them.
+
+---
+
+## 5. The demo in two minutes
+
+1. **Teacher explains.** "HTML is made of tags. Every tag you open needs a closing tag." Nothing appears on student screens: it knew that was not an instruction.
+2. **Teacher gives the task, mid-lesson.** "Now add a title to your page with an h1 tag, then add a paragraph under it." Steps appear on every student screen.
+3. **Maya hears her first step by name**, types `<h1>My Website</h1>`, and step 1 ticks. CoTeach AI gives her the next one.
+4. **Maya asks "What's a paragraph tag?"** It answers in the teacher's words. "Why CoTeach AI said this" shows the quotes.
+5. **Leo is stuck** on an unfinished closing tag. He gets two hints, then the teacher page shows **"Leo needs you"** with the reason and his code.
+6. **"How CoTeach AI decided"** on Leo's card shows every step the agent took, including the hint it was not allowed to give.
+
+Or open the [teacher example](https://deep-naive-files.replit.app/teacher?demo) and the [student example](https://deep-naive-files.replit.app/student?demo) to see the same story with sample data.
+
+---
 
 ## Run it yourself
 
@@ -126,7 +254,7 @@ It is developed and hosted on Replit, which is the simplest way to run it: impor
 | `ELEVENLABS_VOICE_ID` | Optional. Which voice to use; without it the first voice on the account is used |
 | `VITE_ELEVENLABS_AGENT_ID` | Optional. The live voice conversation on the student page |
 
-Without the keys the app still runs: steps fall back to a simple sentence splitter and are labelled "Basic steps (AI unavailable)", so nothing staged is ever passed off as AI.
+Without the keys the app still runs, with steps from the labelled fallback.
 
 From the repository root:
 
@@ -144,20 +272,27 @@ Tests, from `artifacts/classroom-link`:
 node --test server/*.test.mjs
 ```
 
-The full demo run, against a running server:
+The full end-to-end run, against a running server:
 
 ```bash
 node server/demo-run.mjs http://localhost:5000
 ```
 
-## What's next
-
-- **Other subjects.** Anything done on a screen: writing, maths, science labs. The steps agent already works on any spoken instruction; the live checks are what change per subject.
-- **A browser extension**, so CoTeach AI sits on top of the tools schools already use and nobody has to switch platforms.
-- **Accounts and classes**, so a teacher's lessons and students carry over from day to day.
-- **After-class summaries** for the teacher: which instructions students lost most often, and who needed help.
-
 ## Team
 
 Nabiha: teacher side and server (steps agent, student agent, voice, teacher page).
 Amber: student side (editor, live preview, the CoTeach AI panel, voice conversation).
+
+## Sources
+
+- NCES, *Students With Disabilities*, Condition of Education: https://nces.ed.gov/programs/coe/indicator/cgg/students-with-disabilities
+- NCES Fast Facts, inclusion of students with disabilities: https://nces.ed.gov/fastfacts/display.asp?id=59
+- NCES, *English Learners in Public Schools*: https://nces.ed.gov/programs/coe/indicator/cgf/english-learners
+- CDC, *Data and Statistics on ADHD*: https://www.cdc.gov/adhd/data/index.html
+- CDC ADDM Network autism report (April 2025), as reported by NBC News: https://www.nbcnews.com/health/health-news/autism-rates-up-cdc-report-2025-rfk-jr-rcna201305
+- Education Week, *Special Education: Definition, Statistics, and Trends*: https://www.edweek.org/teaching-learning/special-education-definition-statistics-and-trends/2019/12
+- MRC Cognition and Brain Sciences Unit, working memory and classroom learning: https://www.mrc-cbu.cam.ac.uk/our-research/gathercole/classroom-learning/
+- Gathercole and Alloway, *Understanding Working Memory: A Classroom Guide*: https://calm.mrc-cbu.cam.ac.uk/wp-content/uploads/calm/sites/5/2024/03/WM-classroom-guide.pdf
+- Dunning, Holmes and Gathercole (2013), *Developmental Science*: https://pmc.ncbi.nlm.nih.gov/articles/PMC4232921/
+- CAST, *Universal Design for Learning Guidelines*: https://udlguidelines.cast.org/
+- NCES School Pulse Panel, hiring challenges at the start of 2024–25: https://nces.ed.gov/learn/press-release/most-u-s-public-elementary-and-secondary-schools-faced-hiring-challenges-start-2024-25-academic-year
