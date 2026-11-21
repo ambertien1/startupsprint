@@ -73,6 +73,17 @@ What we have both seen, in two different subjects:
 - **A lot of confusion about what to do and where to go next**, far more often than confusion about the idea itself.
 - **Not enough of us.** One teacher cannot help every student perfectly and still keep the lesson on time. There is a set amount of content and a strict time frame. Every minute spent re-explaining steps to one student is a minute the rest of the class is waiting, or a minute cut from the lesson.
 
+With students who have different needs, we have seen it show up in specific ways:
+
+- **Students with attention differences such as ADHD** catch the first step and miss the rest, or get sidetracked partway through and cannot find their place again. They are often the first to be told off for being off task, when what they have lost is the instruction.
+- **Students with dyslexia or other reading differences** are not helped much by a long block of instructions on the board. Rereading it costs them the time everyone else spends working, so they start behind every time.
+- **Autistic students** can stall on instructions that are vague or implied ("finish that off", "do the next bit"). They do much better with one literal step at a time, and a change of plan in the middle of a task is hard without something to look back at.
+- **Students who process more slowly** are still working on step one when step three is given. By the time they look up, the class has moved on.
+- **Students who are anxious about asking** stay quiet. They would rather sit stuck than be seen needing help again, and being helped out loud in front of everyone is exactly what they are trying to avoid.
+- **The students who need the most support often get it last.** The students who call out get attention first, and the quiet student who has been stuck for ten minutes is the one we find at the end.
+
+None of these students lack the ability to do the task. What they lack is the instruction, in a form they can hold on to, at the moment they need it.
+
 That last point is getting harder, not easier. At the start of the 2024–25 school year, 74% of US public schools reported difficulty filling at least one teaching position with a fully certified teacher, and special education positions were the hardest of all to fill ([NCES School Pulse Panel](https://nces.ed.gov/learn/press-release/most-u-s-public-elementary-and-secondary-schools-faced-hiring-challenges-start-2024-25-academic-year)). The students who most need a patient adult beside them are in classrooms that have the fewest adults to spare.
 
 **We would use this ourselves.** In a coding camp it would hold every student's place in the steps, so nobody is lost just because they looked away. In a math class it would do the same for the steps of a problem. It would give us back the time we spend repeating instructions and let us spend it on the students who need a person. And because what we have seen is the same in coding and in math, we are confident other teachers would find it useful too: the problem is not the subject, it is spoken multi-step instructions and one teacher for a whole room.
