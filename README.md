@@ -194,7 +194,9 @@ Most classroom AI today sits in one of four places:
 - **Direction and worksheet generators** turn text a teacher types beforehand into steps. They do not work from live speech, and they produce one shared handout.
 - **Classroom monitoring tools** watch student screens for off-task behaviour. They do not help the student do the task.
 
-CoTeach AI does the part in between that none of those do: it **starts from the teacher's live voice**, finds the instruction inside the lesson with no extra action from her, gives **each student their own tracked steps**, follows their work as they type, and answers **in the teacher's own words**. When we searched in November 2026 we did not find a product that turns a teacher's live speech into per-student steps as she talks. The closest we found worked from typed text or from recordings after the lesson. We cannot claim nothing like it exists anywhere, only that we looked and did not find it.
+CoTeach AI does the part in between that none of those do: it **starts from the teacher's live voice**, finds the instruction inside the lesson with no extra action from her, gives **each student their own tracked steps**, follows their work as they type, and answers **in the teacher's own words**.
+
+**As of right now, there is no platform targeting this use case.** Nothing on the market takes a teacher's live voice, in the moment she is teaching, and turns it into each student's own steps on their own screen. Every existing tool makes someone do extra work first: the teacher types the instructions ahead of time, or the student has to know what to ask. CoTeach AI is the first built around the way teaching actually happens: out loud, once, in real time.
 
 Three things we think are hard to copy quickly:
 
