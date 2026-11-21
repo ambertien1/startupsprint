@@ -1,5 +1,7 @@
 # CoTeach AI
 
+CoTeach AI is an all-in-one agentic classroom management platform that transforms teachers’ spoken instructions into personalized, step-by-step guidance, empowering students with learning differences to work independently while giving teachers real-time insights into who needs additional support.
+
 **The teacher says it once. Every student gets their own steps, and a patient voice to help with each one.**
 
 CoTeach AI listens while a teacher teaches. When she tells the class to do something, it turns her words into short, ordered steps on every student's screen, says each step aloud by name, follows each student's work as they type, and tells the teacher who needs her.
